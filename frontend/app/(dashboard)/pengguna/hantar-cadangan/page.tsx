@@ -18,6 +18,20 @@ export default function HantarCadangan() {
   const wordCount = description.trim().split(/\s+/).filter((word) => word.length > 0).length;
   const isOverLimit = wordCount > 100;
 
+  // Fungsi halang taip lebih 100 perkataan
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const inputText = e.target.value;
+    const words = inputText.trim().split(/\s+/).filter((word) => word.length > 0);
+
+    if (words.length <= 100) {
+      setDescription(inputText); // Benarkan jika 100 atau kurang
+    } else {
+      // Jika melebihi 100 (cth: Copy Paste panjang), potong supaya ngam 100 perkataan
+      const truncatedText = words.slice(0, 100).join(" ");
+      setDescription(truncatedText);
+    }
+  };
+
   const handleSubmit = async (isDraft: boolean) => {
     if (isOverLimit) {
       setErrorMsg("Penerangan tidak boleh melebihi 100 patah perkataan.");
@@ -113,7 +127,7 @@ export default function HantarCadangan() {
             <textarea
               rows={5}
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={handleDescriptionChange} /* <-- Gunakan fungsi baharu di sini */
               placeholder="Terangkan cadangan anda di sini..."
               className={`w-full rounded-lg border px-4 py-3 text-slate-800 outline-none transition-colors ${
                 isOverLimit ? "border-red-500 focus:ring-red-500" : "border-slate-300 focus:border-[#003B73] focus:ring-1 focus:ring-[#003B73]"
