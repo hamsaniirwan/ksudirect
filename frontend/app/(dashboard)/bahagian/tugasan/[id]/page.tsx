@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
 export default function KemasKiniTindakan() {
   const { id } = useParams();
   const router = useRouter();
+  const pathname = usePathname(); // Untuk dapatkan URL semasa
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -19,25 +20,46 @@ export default function KemasKiniTindakan() {
   useEffect(() => {
     const fetchDetail = async () => {
       const token = localStorage.getItem("token");
+      
+      // Jika tiada token, suruh log masuk BESERTA URL INI
+      if (!token) {
+        router.push(`/?redirect=${encodeURIComponent(pathname)}`);
+        return;
+      }
+
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bahagian/tasks/${id}`, {
-          headers: { "Authorization": `Bearer ${token}` }
+          headers: { 
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/json" // WAJIB ADA
+          }
         });
+
+        // Pelindung jika backend return HTML (isu sesi/akses)
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new TypeError("Sesi anda mungkin telah luput atau tiada kebenaran akses. Sila log keluar dan log masuk semula.");
+        }
+
         const result = await res.json();
-        if (result.status === "success") {
+        
+        if (res.ok && result.status === "success") {
           setData(result.data);
           setStatus(result.data.task.status);
+        } else if (res.status === 401 || res.status === 403) {
+          setErrorMsg("Akses ditolak. Pastikan anda log masuk sebagai Ketua Bahagian yang berdaftar.");
         } else {
-          router.push("/bahagian/tugasan");
+          setErrorMsg(result.message || "Gagal memuatkan data tugasan.");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        setErrorMsg(err.message || "Ralat sistem. Tidak dapat berhubung dengan pangkalan pelayan.");
       } finally {
         setLoading(false);
       }
     };
     fetchDetail();
-  }, [id, router]);
+  }, [id, router, pathname]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,13 +77,18 @@ export default function KemasKiniTindakan() {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Accept": "application/json" // WAJIB ADA
         },
         body: JSON.stringify({ status, remarks })
       });
+
       if (res.ok) {
         router.refresh();
         window.location.reload();
+      } else {
+        const result = await res.json();
+        setErrorMsg(result.message || "Gagal menyimpan rekod.");
       }
     } catch (err) {
       setErrorMsg("Ralat sistem. Gagal menyimpan rekod.");
@@ -71,6 +98,23 @@ export default function KemasKiniTindakan() {
   };
 
   if (loading) return <div className="p-8 text-center text-slate-500">Memuatkan data...</div>;
+
+  // Paparan ralat penuh (jika akses dihalang atau sesi luput)
+  if (errorMsg && !data) return (
+    <div className="p-8 mx-auto">
+      <div className="bg-red-50 border border-red-200 text-red-600 p-6 rounded-xl shadow-sm text-center">
+        <svg className="w-12 h-12 mx-auto mb-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h3 className="text-lg font-bold mb-2">Akses Dihalang</h3>
+        <p className="mb-4">{errorMsg}</p>
+        <button onClick={() => router.push("/")} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+          Kembali ke Log Masuk
+        </button>
+      </div>
+    </div>
+  );
+
   if (!data) return null;
 
   const isClosed = data.task.status === "Ditutup";
@@ -128,6 +172,7 @@ export default function KemasKiniTindakan() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm sticky top-6">
           <h3 className="font-bold text-slate-800 mb-4 text-lg border-b border-slate-100 pb-3">Kemas Kini Status</h3>
           
+          {/* Mesej Ralat Borang (Jika form submit gagal) */}
           {errorMsg && (
             <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-200">
               {errorMsg}
@@ -150,7 +195,6 @@ export default function KemasKiniTindakan() {
                   <option value="Telah Dipanjangkan">Belum Diproses (Baharu)</option>
                   <option value="Dalam Tindakan">Dalam Tindakan</option>
                   <option value="Selesai">Selesai / Laporan Disiapkan</option>
-                  {/* Status 'Ditutup' biasanya dilakukan oleh Admin/Pejabat KSU, tapi jika Bahagian dibenarkan, boleh tambah option di sini */}
                 </select>
               </div>
 

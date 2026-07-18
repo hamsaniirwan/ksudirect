@@ -20,21 +20,24 @@ class UserSeeder extends Seeder
         $users = [
             [
                 'name' => 'Ahmad (Pegawai MOT)',
-                'email' => 'officer@mot.gov.my',
+                'email' => 'hamsani7@gmail.com',
+                //'email' => 'officer@mot.gov.my',
                 'password' => Hash::make('password123'),
                 'role' => 'user',
                 'division_id' => null,
             ],
             [
                 'name' => 'Siti (Pegawai Khas KSU)',
-                'email' => 'pegawaikhas@mot.gov.my',
+                'email' => 'hamsani@mot.gov.my',
+                //'email' => 'pegawaikhas@mot.gov.my',
                 'password' => Hash::make('password123'),
                 'role' => 'special_officer',
                 'division_id' => null,
             ],
             [
                 'name' => 'Dato KSU',
-                'email' => 'ksu@mot.gov.my',
+                'email' => 'hamsaniazbzforce@gmail.com',
+                //'email' => 'ksu@mot.gov.my',
                 'password' => Hash::make('password123'),
                 'role' => 'ksu',
                 'division_id' => null,

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Jobs\SendEmailJob;
+use App\Mail\SuggestionNotificationMail;
 use App\Models\Suggestion;
 use App\Models\Division;
 use App\Models\AuditTrail;
@@ -99,6 +101,20 @@ class AdminController extends Controller
 
         // TODO untuk Modul 5: Trigger Email kepada Division Head di sini
 
+        if ($request->action === 'panjangkan') {
+            $divSubject = "KSU Direct - Arahan Tindakan Lanjut KSU";
+            $divBody = "Adalah dimaklumkan bahawa KSU telah menerima satu cadangan penambahbaikan ({$suggestion->reference_no}) untuk diteliti. Sila pihak Bahagian/Unit mengambil tindakan sewajarnya.";
+            $divLink = env('FRONTEND_URL', 'http://localhost:3000') . "/bahagian/tugasan/{$suggestion->id}";
+
+            // Cari Ketua Bahagian untuk bahagian yang dipilih
+            $divisionHeads = User::where('role', 'division_head')
+                ->where('division_id', $request->division_id)
+                ->get();
+
+            foreach ($divisionHeads as $head) {
+                SendEmailJob::dispatch($head->email, new SuggestionNotificationMail($divSubject, $divBody, $divLink));
+            }
+        }
         return response()->json(['status' => 'success', 'message' => 'Tindakan berjaya direkodkan.']);
     }
 }

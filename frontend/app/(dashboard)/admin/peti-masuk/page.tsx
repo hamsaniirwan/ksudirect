@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Suggestion = {
   id: number;
@@ -16,8 +17,10 @@ type Suggestion = {
 };
 
 export default function AdminInbox() {
+  const router = useRouter();
   const [data, setData] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
   // State untuk Filter & Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,26 +29,46 @@ export default function AdminInbox() {
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/");
+        return;
+      }
+
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/inbox`, {
-          headers: { "Authorization": `Bearer ${token}` }
+          headers: { 
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/json" // WAJIB ADA
+          }
         });
+        
+        // Pelindung ralat format
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new TypeError("Pangkalan pelayan mengalami masalah. Sila hubungi pembangun sistem.");
+        }
+
         const result = await res.json();
-        if (result.status === "success") setData(result.data);
-      } catch (err) {
+        
+        if (res.ok && result.status === "success") {
+          setData(result.data);
+        } else {
+          setErrorMsg(result.message || "Gagal memuatkan data senarai.");
+        }
+      } catch (err: any) {
         console.error(err);
+        setErrorMsg(err.message || "Ralat sistem. Tidak dapat berhubung dengan pangkalan pelayan.");
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [router]);
 
   const handlePrint = () => {
     window.print();
   };
 
-  // Logik tapisan data
   const filteredData = data.filter((item) => {
     const searchLower = searchQuery.toLowerCase();
     const matchesSearch = 
@@ -54,7 +77,6 @@ export default function AdminInbox() {
       (item.user?.name && item.user.name.toLowerCase().includes(searchLower));
     
     const matchesStatus = statusFilter === "" || item.status === statusFilter;
-    
     return matchesSearch && matchesStatus;
   });
 
@@ -92,6 +114,12 @@ export default function AdminInbox() {
           Cetak PDF
         </button>
       </div>
+
+      {errorMsg && (
+        <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200">
+          {errorMsg}
+        </div>
+      )}
 
       {/* Bahagian Filter & Search (Disembunyikan semasa print) */}
       <div className="mb-6 flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm print:hidden">
@@ -152,7 +180,6 @@ export default function AdminInbox() {
               className="group flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden print:break-inside-avoid print:shadow-none print:border-slate-300"
             >
               <div className="p-5 flex-1 flex flex-col">
-                {/* Header Kad: No Rujukan & Status */}
                 <div className="flex justify-between items-start mb-4">
                   <span className="text-xs font-bold tracking-wider text-slate-400">
                     {item.reference_no || "TIADA RUJUKAN"}
@@ -160,12 +187,10 @@ export default function AdminInbox() {
                   {getStatusBadge(item.status)}
                 </div>
                 
-                {/* Tajuk Cadangan */}
                 <h3 className="text-lg font-bold text-slate-800 leading-tight mb-4 group-hover:text-[#003B73] transition-colors line-clamp-2 print:line-clamp-none">
                   {item.title}
                 </h3>
                 
-                {/* Maklumat Penghantar */}
                 <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Dikemukakan Oleh</span>

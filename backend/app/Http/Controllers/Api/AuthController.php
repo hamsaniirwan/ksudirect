@@ -19,11 +19,11 @@ class AuthController extends Controller
         ]);
 
         // Validasi domain MOT (FR-001)
-        if (!str_ends_with($request->email, '@mot.gov.my')) {
-            throw ValidationException::withMessages([
-                'email' => ['Akses ditolak. Sila gunakan e-mel rasmi @mot.gov.my sahaja.'],
-            ]);
-        }
+        // if (!str_ends_with($request->email, '@mot.gov.my')) {
+        //     throw ValidationException::withMessages([
+        //         'email' => ['Akses ditolak. Sila gunakan e-mel rasmi @mot.gov.my sahaja.'],
+        //     ]);
+        // }
 
         // Semak kredensial
         if (!Auth::attempt($request->only('email', 'password'))) {

@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Jobs\SendEmailJob;
+use App\Mail\SuggestionNotificationMail;
 use App\Models\Suggestion;
+use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -52,6 +55,23 @@ class SuggestionController extends Controller
 
         // TODO untuk Modul 5: Trigger Email Event di sini jika status = 'Belum Diteliti'
 
+        if (!$request->is_draft) {
+            // 1. Emel kepada Penghantar (Submitter)
+            $submitterSubject = "KSU Direct - Status Penghantaran";
+            $submitterBody = "Cadangan anda ({$suggestion->reference_no}) telah diterima dan dikemukakan kepada Pejabat Ketua Setiausaha.";
+            SendEmailJob::dispatch($request->user()->email, new SuggestionNotificationMail($submitterSubject, $submitterBody));
+
+            // 2. Emel kepada Pejabat KSU
+            $ksuSubject = "KSU Direct - Cadangan Baharu Diterima";
+            $ksuBody = "KSU telah menerima satu cadangan penambahbaikan baharu ({$suggestion->reference_no}) untuk diteliti.";
+            $ksuLink = env('FRONTEND_URL', 'http://localhost:3000') . "/admin/peti-masuk/{$suggestion->id}";
+            
+            // Cari semua user yang memegang role Pejabat KSU (contoh: special_officer)
+            $ksuOfficers = User::whereIn('role', ['special_officer', 'ksu'])->get();
+            foreach ($ksuOfficers as $officer) {
+                SendEmailJob::dispatch($officer->email, new SuggestionNotificationMail($ksuSubject, $ksuBody, $ksuLink));
+            }
+        }
         return response()->json([
             'status' => 'success',
             'message' => $request->is_draft ? 'Draf berjaya disimpan.' : 'Cadangan berjaya dihantar.',

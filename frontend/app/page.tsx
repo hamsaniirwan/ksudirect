@@ -31,20 +31,24 @@ export default function Home() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Papar ralat daripada Laravel (ValidationException)
         setErrorMessage(data.message || "Gagal log masuk. Sila cuba lagi.");
       } else {
-        // Log masuk berjaya
         setSuccessMessage("Log masuk berjaya! Mengalihkan halaman...");
         
-        // Simpan token untuk sesi akan datang
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
-        // TODO: Redirect ke Dashboard menggunakan useRouter() dari next/navigation
+        // Semak jika ada parameter redirect dari pautan e-mel
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get("redirect");
+
         setTimeout(() => {
-          router.push("/dashboard");
-        }, 1000); // Beri masa 1 saat untuk pengguna baca mesej berjaya
+          if (redirectUrl) {
+            router.push(redirectUrl); // Halakan ke halaman cadangan tadi
+          } else {
+            router.push("/dashboard"); // Halakan ke dashboard utama
+          }
+        }, 1000); 
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -58,7 +62,6 @@ export default function Home() {
     <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6 font-sans">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl border border-slate-100">
         
-        {/* Bahagian Header/Logo */}
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-[#003B73] shadow-md">
             <span className="text-2xl font-bold text-white">KSU</span>
@@ -69,7 +72,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Paparan Ralat / Sukses */}
         {errorMessage && (
           <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200">
             {errorMessage}
@@ -81,7 +83,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Borang Log Masuk */}
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -120,7 +121,6 @@ export default function Home() {
           </button>
         </form>
 
-        {/* Nota Tambahan */}
         <div className="mt-8 text-center text-xs text-slate-400">
           <p>Hanya kakitangan kementerian dengan e-mel rasmi @mot.gov.my dibenarkan mengakses sistem ini.</p>
         </div>
