@@ -16,16 +16,56 @@ export default function DashboardLayout({
   // State untuk UI
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false); // <-- State Modal Log Keluar
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showIdleModal, setShowIdleModal] = useState(false); // <-- State baharu untuk Modal Inaktif (Idle)
   
   // State untuk Data Pengguna
   const [userName, setUserName] = useState("Pengguna");
   const [userRole, setUserRole] = useState("user");
   
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null); // Ref untuk menyimpan data pemasa (timer)
+
+  // LOGIK PEMANTAUAN AKTIVITI (IDLE TIMEOUT 15 MINIT)
+  useEffect(() => {
+    const handleAutoLogout = () => {
+      // Padam token dari storan apabila 15 minit tamat
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setShowIdleModal(true); // Paparkan modal log keluar automatik
+    };
+
+    const resetIdleTimer = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      // Set pemasa kepada 15 Minit (15 * 60 * 1000 milisaat)
+      idleTimerRef.current = setTimeout(handleAutoLogout, 15 * 60 * 1000);
+    };
+
+    // Senarai pergerakan yang dianggap sebagai 'Aktif'
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    
+    const handleUserActivity = () => {
+      resetIdleTimer(); // Kira semula 15 minit dari awal jika user ada buat pergerakan
+    };
+
+    // Pasang alat pendengar (event listeners)
+    events.forEach(event => {
+      document.addEventListener(event, handleUserActivity);
+    });
+
+    // Mulakan kiraan pertama kali masuk
+    resetIdleTimer();
+
+    // Pembersihan sistem (cleanup) apabila pengguna keluar
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      events.forEach(event => {
+        document.removeEventListener(event, handleUserActivity);
+      });
+    };
+  }, []);
 
   useEffect(() => {
-    // Ambil data profil dari local storage
     const userData = localStorage.getItem("user");
     if (userData) {
       const parsedData = JSON.parse(userData);
@@ -33,7 +73,6 @@ export default function DashboardLayout({
       setUserRole(parsedData.role);
     }
 
-    // Tutup dropdown jika klik di luar
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
@@ -43,13 +82,11 @@ export default function DashboardLayout({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fungsi apabila butang log keluar pada dropdown ditekan
   const handleLogoutClick = () => {
-    setIsDropdownOpen(false); // Tutup dropdown
-    setShowLogoutModal(true); // Buka modal pengesahan
+    setIsDropdownOpen(false); 
+    setShowLogoutModal(true); 
   };
 
-  // Fungsi sebenar untuk log keluar apabila butang "Ya" ditekan
   const confirmLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -57,7 +94,6 @@ export default function DashboardLayout({
     router.push("/");
   };
 
-  // Format peranan
   const roleDisplay: Record<string, string> = {
     user: "Pegawai MOT",
     special_officer: "Pegawai Khas KSU",
@@ -67,14 +103,12 @@ export default function DashboardLayout({
   };
   const currentRole = roleDisplay[userRole] || "Pengguna";
 
-  // Check untuk akses menu (RBAC)
   const isAdminOrManagement = ["admin", "ksu", "special_officer"].includes(userRole);
   const isDivisionHead = userRole === "division_head";
 
   return (
     <div className="flex h-screen w-full bg-slate-50 font-sans overflow-hidden">
       
-      {/* Overlay Gelap untuk Mobile apabila Sidebar dibuka */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 z-40 bg-black/50 md:hidden transition-opacity"
@@ -82,13 +116,11 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* Sidebar */}
       <aside 
         className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-[#003B73] text-white shadow-xl transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Header Sidebar */}
         <div className="flex h-20 items-center justify-center border-b border-[#002f5c] px-6 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm p-1">
@@ -104,10 +136,8 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        {/* Menu Navigasi */}
         <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto">
           
-          {/* Menu Papan Pemuka */}
           <Link
             href="/dashboard"
             onClick={() => setIsSidebarOpen(false)}
@@ -123,7 +153,6 @@ export default function DashboardLayout({
             Papan Pemuka Utama
           </Link>
 
-          {/* BAHAGIAN MENU TINDAKAN */}
           <div className="pt-4 pb-1">
             <p className="px-4 text-xs font-semibold text-blue-300 uppercase tracking-wider">
               Tindakan
@@ -160,7 +189,6 @@ export default function DashboardLayout({
             Semak Status Cadangan
           </Link>
 
-          {/* BAHAGIAN MENU BAHAGIAN */}
           {isDivisionHead && (
             <>
               <div className="pt-4 pb-1">
@@ -186,7 +214,6 @@ export default function DashboardLayout({
             </>
           )}
 
-          {/* BAHAGIAN MENU ADMIN */}
           {isAdminOrManagement && (
             <>
               <div className="pt-4 pb-1">
@@ -230,10 +257,8 @@ export default function DashboardLayout({
         </nav>
       </aside>
 
-      {/* Bahagian Kanan (Navbar & Kandungan) */}
       <div className="flex flex-1 flex-col overflow-hidden">
         
-        {/* Navbar */}
         <header className="flex h-20 shrink-0 items-center justify-between bg-white px-6 shadow-sm border-b border-slate-200 z-30">
           
           <button
@@ -247,7 +272,6 @@ export default function DashboardLayout({
 
           <div className="hidden md:block"></div>
 
-          {/* Profil Pengguna & Dropdown (Kanan) */}
           <div className="relative flex items-center gap-4" ref={dropdownRef}>
             
             <div className="hidden text-right sm:block">
@@ -264,7 +288,6 @@ export default function DashboardLayout({
               </span>
             </button>
 
-            {/* Kotak Dropdown */}
             {isDropdownOpen && (
               <div className="absolute right-0 top-12 mt-2 w-48 rounded-xl border border-slate-100 bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5 origin-top-right animate-in fade-in zoom-in duration-200">
                 
@@ -274,7 +297,7 @@ export default function DashboardLayout({
                 </div>
 
                 <button
-                  onClick={handleLogoutClick} // <-- Ditukar ke fungsi baharu
+                  onClick={handleLogoutClick} 
                   className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -287,13 +310,12 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        {/* Ruang Kandungan Utama */}
         <main className="flex-1 overflow-y-auto bg-slate-50">
           {children}
         </main>
       </div>
 
-      {/* MODAL PENGESAHAN LOG KELUAR */}
+      {/* 1. MODAL PENGESAHAN LOG KELUAR BIASA */}
       {showLogoutModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl text-center">
@@ -326,6 +348,41 @@ export default function DashboardLayout({
           </div>
         </div>
       )}
+
+      {/* 2. MODAL INAKTIF (IDLE TIMEOUT) OVERLAY */}
+      {showIdleModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-2xl w-full max-w-sm shadow-2xl text-center animate-in zoom-in duration-300">
+            
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-orange-100 mb-4">
+              <svg className="h-8 w-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Anda telah dilog keluar</h3>
+            <p className="text-sm text-slate-500 mb-8 leading-relaxed">
+              Atas faktor keselamatan, sistem telah melog keluar akaun anda kerana tidak aktif selama 15 minit.
+            </p>
+            
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => router.push("/")}
+                className="w-full px-5 py-3 bg-[#003B73] text-white font-semibold rounded-xl hover:bg-[#002f5c] shadow-md transition-colors"
+              >
+                Log Masuk Semula
+              </button>
+              <button 
+                onClick={() => setShowIdleModal(false)}
+                className="w-full px-5 py-3 text-slate-500 font-semibold hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Kembali
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
