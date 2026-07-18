@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image"; 
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 
@@ -15,6 +16,7 @@ export default function DashboardLayout({
   // State untuk UI
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false); // <-- State Modal Log Keluar
   
   // State untuk Data Pengguna
   const [userName, setUserName] = useState("Pengguna");
@@ -41,9 +43,17 @@ export default function DashboardLayout({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+  // Fungsi apabila butang log keluar pada dropdown ditekan
+  const handleLogoutClick = () => {
+    setIsDropdownOpen(false); // Tutup dropdown
+    setShowLogoutModal(true); // Buka modal pengesahan
+  };
+
+  // Fungsi sebenar untuk log keluar apabila butang "Ya" ditekan
+  const confirmLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    setShowLogoutModal(false);
     router.push("/");
   };
 
@@ -81,8 +91,14 @@ export default function DashboardLayout({
         {/* Header Sidebar */}
         <div className="flex h-20 items-center justify-center border-b border-[#002f5c] px-6 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-xl font-bold text-[#003B73] shadow-sm">
-              K
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm p-1">
+              <Image 
+                src="/logo/jata_negara.png" 
+                alt="Logo Jata Negara" 
+                width={32} 
+                height={32} 
+                className="object-contain"
+              />
             </div>
             <span className="text-xl font-bold tracking-wide">KSU Direct</span>
           </div>
@@ -107,7 +123,7 @@ export default function DashboardLayout({
             Papan Pemuka Utama
           </Link>
 
-          {/* BAHAGIAN MENU TINDAKAN (Semua Pengguna boleh lihat) */}
+          {/* BAHAGIAN MENU TINDAKAN */}
           <div className="pt-4 pb-1">
             <p className="px-4 text-xs font-semibold text-blue-300 uppercase tracking-wider">
               Tindakan
@@ -144,7 +160,7 @@ export default function DashboardLayout({
             Semak Status Cadangan
           </Link>
 
-          {/* BAHAGIAN MENU BAHAGIAN - HANYA DIPAPARKAN KEPADA KETUA BAHAGIAN */}
+          {/* BAHAGIAN MENU BAHAGIAN */}
           {isDivisionHead && (
             <>
               <div className="pt-4 pb-1">
@@ -170,7 +186,7 @@ export default function DashboardLayout({
             </>
           )}
 
-          {/* BAHAGIAN MENU ADMIN - HANYA DIPAPARKAN JIKA ROLE SESUAI */}
+          {/* BAHAGIAN MENU ADMIN */}
           {isAdminOrManagement && (
             <>
               <div className="pt-4 pb-1">
@@ -220,7 +236,6 @@ export default function DashboardLayout({
         {/* Navbar */}
         <header className="flex h-20 shrink-0 items-center justify-between bg-white px-6 shadow-sm border-b border-slate-200 z-30">
           
-          {/* Butang Hamburger (Hanya untuk Mobile) */}
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus:outline-none md:hidden"
@@ -230,24 +245,20 @@ export default function DashboardLayout({
             </svg>
           </button>
 
-          {/* Kosong di kiri untuk jarak bila di desktop */}
           <div className="hidden md:block"></div>
 
           {/* Profil Pengguna & Dropdown (Kanan) */}
           <div className="relative flex items-center gap-4" ref={dropdownRef}>
             
-            {/* Teks Nama & Peranan (Disembunyikan pada skrin sangat kecil) */}
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold text-slate-700">{userName}</p>
               <p className="text-xs text-slate-500">{currentRole}</p>
             </div>
 
-            {/* Butang Imej Profil */}
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-slate-200 bg-blue-100 transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#003B73] focus:ring-offset-2"
             >
-              {/* Fallback avatar jika tiada gambar menggunakan huruf pertama nama */}
               <span className="text-lg font-bold text-[#003B73]">
                 {userName.charAt(0).toUpperCase()}
               </span>
@@ -257,14 +268,13 @@ export default function DashboardLayout({
             {isDropdownOpen && (
               <div className="absolute right-0 top-12 mt-2 w-48 rounded-xl border border-slate-100 bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5 origin-top-right animate-in fade-in zoom-in duration-200">
                 
-                {/* Info profil ringkas di dalam dropdown untuk paparan mobile */}
                 <div className="block border-b border-slate-100 px-4 py-3 sm:hidden">
                   <p className="text-sm font-semibold text-slate-700 truncate">{userName}</p>
                   <p className="text-xs text-slate-500 truncate">{currentRole}</p>
                 </div>
 
                 <button
-                  onClick={handleLogout}
+                  onClick={handleLogoutClick} // <-- Ditukar ke fungsi baharu
                   className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -282,6 +292,40 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+
+      {/* MODAL PENGESAHAN LOG KELUAR */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl text-center">
+            
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Log Keluar</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Adakah anda pasti untuk log keluar?
+            </p>
+            
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={() => setShowLogoutModal(false)}
+                className="px-5 py-2.5 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Kembali
+              </button>
+              <button 
+                onClick={confirmLogout}
+                className="px-5 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 shadow-md transition-colors"
+              >
+                Ya
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

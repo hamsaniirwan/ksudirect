@@ -39,7 +39,7 @@ export default function PaparCadangan() {
   if (!data) return null;
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8 mx-auto">
       <div className="mb-6 flex items-center gap-4">
         <Link href="/pengguna/semak-cadangan" className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-slate-600 hover:bg-slate-300 transition-colors">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>

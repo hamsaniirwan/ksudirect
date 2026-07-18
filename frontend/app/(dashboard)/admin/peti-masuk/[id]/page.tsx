@@ -1,21 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// TAMBAH usePathname DI SINI
 import { useParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
 export default function PetiMasukDetail() {
   const { id } = useParams();
   const router = useRouter();
-  const pathname = usePathname(); // <-- BARIS INI YANG TERTINGGAL TADI
+  const pathname = usePathname(); 
   
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   
-  // Modal State
+  // Modal States
   const [showModal, setShowModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false); 
+  const [modalError, setModalError] = useState(""); // <-- State baharu untuk ralat modal
+  
+  // Form States
   const [actionType, setActionType] = useState("");
   const [selectedDivision, setSelectedDivision] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -24,7 +27,6 @@ export default function PetiMasukDetail() {
     const fetchDetail = async () => {
       const token = localStorage.getItem("token");
       
-      // Jika tiada token, suruh log masuk BESERTA URL INI
       if (!token) {
         router.push(`/?redirect=${encodeURIComponent(pathname)}`);
         return;
@@ -62,8 +64,20 @@ export default function PetiMasukDetail() {
     fetchDetail();
   }, [id, router, pathname]);
 
+  // Semakan (Validasi) inline
+  const triggerConfirm = () => {
+    if (actionType === 'panjangkan' && !selectedDivision) {
+      setModalError("Sila pilih Bahagian/Unit MOT terlebih dahulu."); // <-- Ganti alert()
+      return;
+    }
+    setModalError(""); // Kosongkan ralat jika berjaya
+    setShowConfirmModal(true); 
+  };
+
   const submitDecision = async () => {
+    setShowConfirmModal(false); 
     const token = localStorage.getItem("token");
+    
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/inbox/${id}/decision`, {
         method: "POST",
@@ -80,12 +94,23 @@ export default function PetiMasukDetail() {
         window.location.reload(); 
       } else {
         const result = await res.json();
-        alert(result.message || "Gagal menyimpan keputusan.");
+        setShowModal(false);
+        setErrorMsg(result.message || "Gagal menyimpan keputusan."); // <-- Ganti alert()
       }
     } catch (err) {
       console.error(err);
-      alert("Berlaku ralat sistem semasa menyimpan keputusan.");
+      setShowModal(false);
+      setErrorMsg("Berlaku ralat sistem semasa menyimpan keputusan."); // <-- Ganti alert()
     }
+  };
+
+  // Fungsi buka modal & bersihkan state lama
+  const handleOpenModal = (type: string) => {
+    setActionType(type);
+    setSelectedDivision("");
+    setRemarks("");
+    setModalError("");
+    setShowModal(true);
   };
 
   if (loading) return <div className="p-8 text-center text-slate-500">Memuatkan data...</div>;
@@ -96,7 +121,7 @@ export default function PetiMasukDetail() {
         <svg className="w-12 h-12 mx-auto mb-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
-        <h3 className="text-lg font-bold mb-2">Akses Dihalang</h3>
+        <h3 className="text-lg font-bold mb-2">Peringatan Sistem</h3>
         <p className="mb-4">{errorMsg}</p>
         <button onClick={() => router.push("/")} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
           Kembali ke Log Masuk
@@ -108,7 +133,7 @@ export default function PetiMasukDetail() {
   if (!data) return null;
 
   return (
-    <div className="p-8 mx-auto">
+    <div className="p-8 mx-auto relative">
       <div className="mb-6 flex justify-between items-center">
         <div className="flex items-center gap-4">
           <Link href="/admin/peti-masuk" className="text-slate-500 hover:text-[#003B73]">
@@ -120,13 +145,13 @@ export default function PetiMasukDetail() {
         {data.suggestion.status === "Belum Diteliti" && (
           <div className="flex gap-3">
             <button 
-              onClick={() => { setActionType("abaikan"); setShowModal(true); }}
+              onClick={() => handleOpenModal("abaikan")}
               className="px-4 py-2 bg-slate-100 text-slate-600 font-semibold rounded-lg hover:bg-slate-200 transition-colors"
             >
               Tiada Tindakan Lanjut
             </button>
             <button 
-              onClick={() => { setActionType("panjangkan"); setShowModal(true); }}
+              onClick={() => handleOpenModal("panjangkan")}
               className="px-4 py-2 bg-[#003B73] text-white font-semibold rounded-lg hover:bg-[#002f5c] shadow-sm transition-colors"
             >
               Panjangkan ke Bahagian
@@ -176,20 +201,31 @@ export default function PetiMasukDetail() {
         {data.audit_trails.length === 0 && <p className="text-sm text-slate-500">Tiada rekod audit setakat ini.</p>}
       </div>
 
+      {/* 1. Modal Borang (Lapis Pertama) */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl">
             <h3 className="text-lg font-bold mb-4">
               {actionType === 'panjangkan' ? 'Panjangkan Tindakan' : 'Abaikan Cadangan'}
             </h3>
+
+            {/* Mesej Ralat Inline Ganti alert() */}
+            {modalError && (
+              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-200">
+                {modalError}
+              </div>
+            )}
             
             {actionType === 'panjangkan' && (
               <div className="mb-4">
                 <label className="block text-sm font-semibold mb-2">Pilih Bahagian/Unit MOT</label>
                 <select 
-                  className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-[#003B73]"
+                  className={`w-full border p-2.5 rounded-lg outline-none focus:ring-1 transition-colors ${modalError ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#003B73]'}`}
                   value={selectedDivision}
-                  onChange={(e) => setSelectedDivision(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedDivision(e.target.value);
+                    if (e.target.value) setModalError(""); // Padam ralat automatik bila user dah pilih
+                  }}
                 >
                   <option value="">-- Pilih Bahagian --</option>
                   {data.divisions.map((div: any) => (
@@ -210,7 +246,43 @@ export default function PetiMasukDetail() {
 
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg">Batal</button>
-              <button onClick={submitDecision} className="px-5 py-2 bg-[#003B73] text-white font-medium rounded-lg hover:bg-[#002f5c] shadow-sm">Sahkan</button>
+              <button onClick={triggerConfirm} className="px-5 py-2 bg-[#003B73] text-white font-medium rounded-lg hover:bg-[#002f5c] shadow-sm">Sahkan</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Modal Pengesahan - Adakah Anda Pasti? (Lapis Kedua - Z-index lebih tinggi) */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl text-center">
+            
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+              <svg className="h-6 w-6 text-[#003B73]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Adakah anda pasti?</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              {actionType === 'panjangkan' 
+                ? "Fail cadangan ini akan dihantar ke Bahagian yang dipilih dan tidak boleh ditarik balik." 
+                : "Fail cadangan ini akan ditutup dan tiada tindakan lanjut akan dibuat."}
+            </p>
+            
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={() => setShowConfirmModal(false)}
+                className="px-5 py-2.5 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Kembali
+              </button>
+              <button 
+                onClick={submitDecision}
+                className="px-5 py-2.5 bg-[#003B73] text-white font-semibold rounded-xl hover:bg-[#002f5c] shadow-md transition-colors"
+              >
+                Ya, Sahkan
+              </button>
             </div>
           </div>
         </div>

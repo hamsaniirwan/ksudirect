@@ -31,7 +31,7 @@ class SuggestionController extends Controller
             'is_draft' => 'required|boolean'
         ]);
 
-        // Validasi Backend: Maksimum 100 patah perkataan (FR-003)
+        // Validasi Backend: Maksimum 100 patah perkataan
         if (str_word_count($request->description) > 100) {
             throw ValidationException::withMessages([
                 'description' => ['Penerangan tidak boleh melebihi 100 patah perkataan.']
@@ -47,14 +47,27 @@ class SuggestionController extends Controller
             $data['reference_no'] = $this->generateReferenceNumber();
         }
 
+        // TUKAR LOGIK UPLOAD FAIL DI SINI
         if ($request->hasFile('attachment')) {
-            $data['attachment'] = $request->file('attachment')->store('attachments', 'public');
+            $file = $request->file('attachment');
+            $extension = $file->getClientOriginalExtension(); // Dapatkan format fail (cth: pdf, docx)
+            
+            // Tetapkan nama fail berdasarkan status
+            if (isset($data['reference_no'])) {
+                // Jika ada no rujukan: KSU-2026-0001.pdf
+                $filename = $data['reference_no'] . '.' . $extension;
+            } else {
+                // Jika masih draf: DRAF_1700000000.pdf
+                $filename = 'DRAF_' . time() . '.' . $extension;
+            }
+
+            // Simpan fail menggunakan nama yang telah ditetapkan
+            $data['attachment'] = $file->storeAs('attachments', $filename, 'public');
         }
 
         $suggestion = Suggestion::create($data);
 
-        // TODO untuk Modul 5: Trigger Email Event di sini jika status = 'Belum Diteliti'
-
+        // Modul 5: Trigger Email Event di sini jika status = 'Belum Diteliti'
         if (!$request->is_draft) {
             // 1. Emel kepada Penghantar (Submitter)
             $submitterSubject = "KSU Direct - Status Penghantaran";
@@ -72,6 +85,7 @@ class SuggestionController extends Controller
                 SendEmailJob::dispatch($officer->email, new SuggestionNotificationMail($ksuSubject, $ksuBody, $ksuLink));
             }
         }
+        
         return response()->json([
             'status' => 'success',
             'message' => $request->is_draft ? 'Draf berjaya disimpan.' : 'Cadangan berjaya dihantar.',

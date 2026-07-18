@@ -7,11 +7,14 @@ import Link from "next/link";
 export default function KemasKiniTindakan() {
   const { id } = useParams();
   const router = useRouter();
-  const pathname = usePathname(); // Untuk dapatkan URL semasa
+  const pathname = usePathname(); 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Modal State
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Form State
   const [status, setStatus] = useState("");
@@ -21,7 +24,6 @@ export default function KemasKiniTindakan() {
     const fetchDetail = async () => {
       const token = localStorage.getItem("token");
       
-      // Jika tiada token, suruh log masuk BESERTA URL INI
       if (!token) {
         router.push(`/?redirect=${encodeURIComponent(pathname)}`);
         return;
@@ -31,11 +33,10 @@ export default function KemasKiniTindakan() {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bahagian/tasks/${id}`, {
           headers: { 
             "Authorization": `Bearer ${token}`,
-            "Accept": "application/json" // WAJIB ADA
+            "Accept": "application/json" 
           }
         });
 
-        // Pelindung jika backend return HTML (isu sesi/akses)
         const contentType = res.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
             throw new TypeError("Sesi anda mungkin telah luput atau tiada kebenaran akses. Sila log keluar dan log masuk semula.");
@@ -61,13 +62,20 @@ export default function KemasKiniTindakan() {
     fetchDetail();
   }, [id, router, pathname]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Fungsi trigger pop-up pengesahan (bukan terus submit)
+  const handleTriggerSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!remarks) {
       setErrorMsg("Sila masukkan ulasan tindakan anda.");
       return;
     }
-    
+    setErrorMsg(""); // Kosongkan ralat
+    setShowConfirmModal(true); // Tunjuk Modal
+  };
+
+  // Fungsi submit sebenar bila "Ya" ditekan
+  const processSubmit = async () => {
+    setShowConfirmModal(false); // Tutup Modal
     setSubmitLoading(true);
     setErrorMsg("");
     
@@ -78,7 +86,7 @@ export default function KemasKiniTindakan() {
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
-          "Accept": "application/json" // WAJIB ADA
+          "Accept": "application/json" 
         },
         body: JSON.stringify({ status, remarks })
       });
@@ -99,7 +107,6 @@ export default function KemasKiniTindakan() {
 
   if (loading) return <div className="p-8 text-center text-slate-500">Memuatkan data...</div>;
 
-  // Paparan ralat penuh (jika akses dihalang atau sesi luput)
   if (errorMsg && !data) return (
     <div className="p-8 mx-auto">
       <div className="bg-red-50 border border-red-200 text-red-600 p-6 rounded-xl shadow-sm text-center">
@@ -120,7 +127,7 @@ export default function KemasKiniTindakan() {
   const isClosed = data.task.status === "Ditutup";
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
+    <div className="p-6 md:p-8 max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 relative">
       
       {/* Bahagian Kiri: Maklumat Cadangan & Sejarah */}
       <div className="flex-1">
@@ -172,7 +179,6 @@ export default function KemasKiniTindakan() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm sticky top-6">
           <h3 className="font-bold text-slate-800 mb-4 text-lg border-b border-slate-100 pb-3">Kemas Kini Status</h3>
           
-          {/* Mesej Ralat Borang (Jika form submit gagal) */}
           {errorMsg && (
             <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-200">
               {errorMsg}
@@ -184,7 +190,7 @@ export default function KemasKiniTindakan() {
               Fail tugasan ini telah ditutup. Tiada tindakan lanjut diperlukan.
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleTriggerSubmit} className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Pilih Status Baharu</label>
                 <select 
@@ -205,7 +211,10 @@ export default function KemasKiniTindakan() {
                   rows={4}
                   placeholder="Terangkan tindakan yang telah/akan diambil..."
                   value={remarks} 
-                  onChange={(e) => setRemarks(e.target.value)}
+                  onChange={(e) => {
+                    setRemarks(e.target.value);
+                    if(e.target.value) setErrorMsg(""); // Padam ralat bila user menaip
+                  }}
                 />
               </div>
 
@@ -220,6 +229,40 @@ export default function KemasKiniTindakan() {
           )}
         </div>
       </div>
+
+      {/* Modal Pengesahan - Adakah Anda Pasti? */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl text-center">
+            
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+              <svg className="h-6 w-6 text-[#003B73]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Adakah anda pasti?</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Tindakan ini akan mengemas kini status fail cadangan dan merekodkan ulasan anda secara kekal.
+            </p>
+            
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={() => setShowConfirmModal(false)}
+                className="px-5 py-2.5 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Kembali
+              </button>
+              <button 
+                onClick={processSubmit}
+                className="px-5 py-2.5 bg-[#003B73] text-white font-semibold rounded-xl hover:bg-[#002f5c] shadow-md transition-colors"
+              >
+                Ya, Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

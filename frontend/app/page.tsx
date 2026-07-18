@@ -63,8 +63,16 @@ export default function Home() {
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl border border-slate-100">
         
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-[#003B73] shadow-md">
-            <span className="text-2xl font-bold text-white">KSU</span>
+          {/* Logo Jata Negara */}
+          <div className="mb-4 flex h-24 w-24 items-center justify-center">
+            <Image 
+              src="/logo/jata_negara.png" 
+              alt="Logo Jata Negara" 
+              width={96} 
+              height={96} 
+              className="object-contain"
+              priority
+            />
           </div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">KSU Direct</h1>
           <p className="mt-2 text-sm text-slate-500">
