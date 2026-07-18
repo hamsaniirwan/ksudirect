@@ -2,17 +2,44 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController; 
+use App\Http\Controllers\Api\SuggestionController;
+use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\DivisionTaskController;
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+// Laluan Terbuka (Public)
+Route::post('/login', [AuthController::class, 'login']);
 
-// Tambah route baru ini untuk test sambungan (terbuka kepada semua)
-Route::get('/hello', function () {
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Mantap! Next.js berjaya berhubung dengan Laravel API.'
-    ]);
-});
+// Laluan Terlindung (Protected by Sanctum)
+Route::middleware('auth:sanctum')->group(function () {
+    
+    Route::post('/logout', [AuthController::class, 'logout']);
+    
+    Route::get('/user', function (Request $request) {
+        return response()->json([
+            'status' => 'success',
+            'data' => $request->user()
+        ]);
+    });
 
+    // --- PASTIKAN SEMUA ROUTE INI DUDUK DI DALAM BLOK MIDDLEWARE INI ---
 
+    // Route Modul Pengguna
+    Route::apiResource('suggestions', SuggestionController::class)->only(['index', 'store', 'show']);
+
+    // Route Modul Admin
+    Route::prefix('admin')->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'dashboard']);
+        Route::get('/inbox', [AdminController::class, 'inbox']);
+        Route::get('/inbox/{id}', [AdminController::class, 'show']);
+        Route::post('/inbox/{id}/decision', [AdminController::class, 'decision']);
+    });
+
+    // Route Modul Bahagian
+    Route::prefix('bahagian')->group(function () {
+        Route::get('/tasks', [DivisionTaskController::class, 'index']);
+        Route::get('/tasks/{id}', [DivisionTaskController::class, 'show']);
+        Route::post('/tasks/{id}/status', [DivisionTaskController::class, 'updateStatus']);
+    });
+
+}); // <-- PENUTUP KUMPULAN SANCTUM BERADA DI BAWAH SEKALI

@@ -1,0 +1,81 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Suggestion;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+
+class SuggestionController extends Controller
+{
+    // Papar senarai cadangan milik pengguna log masuk
+    public function index(Request $request)
+    {
+        $suggestions = Suggestion::where('user_id', $request->user()->id)->latest()->get();
+        return response()->json(['status' => 'success', 'data' => $suggestions]);
+    }
+
+    // Simpan Draf atau Hantar Terus
+    public function store(Request $request)
+    {
+        $request->validate([
+            'category' => 'required|string',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'attachment' => 'nullable|file|mimes:pdf,docx,xlsx,jpg,png|max:20480', // Max 20MB
+            'is_draft' => 'required|boolean'
+        ]);
+
+        // Validasi Backend: Maksimum 100 patah perkataan (FR-003)
+        if (str_word_count($request->description) > 100) {
+            throw ValidationException::withMessages([
+                'description' => ['Penerangan tidak boleh melebihi 100 patah perkataan.']
+            ]);
+        }
+
+        $data = $request->only(['category', 'title', 'description']);
+        $data['user_id'] = $request->user()->id;
+        $data['status'] = $request->is_draft ? 'Draft' : 'Belum Diteliti';
+
+        // Jana Nombor Rujukan jika dihantar (Bukan draf)
+        if (!$request->is_draft) {
+            $data['reference_no'] = $this->generateReferenceNumber();
+        }
+
+        if ($request->hasFile('attachment')) {
+            $data['attachment'] = $request->file('attachment')->store('attachments', 'public');
+        }
+
+        $suggestion = Suggestion::create($data);
+
+        // TODO untuk Modul 5: Trigger Email Event di sini jika status = 'Belum Diteliti'
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $request->is_draft ? 'Draf berjaya disimpan.' : 'Cadangan berjaya dihantar.',
+            'data' => $suggestion
+        ]);
+    }
+
+    // Papar perincian cadangan
+    public function show(Request $request, $id)
+    {
+        $suggestion = Suggestion::where('user_id', $request->user()->id)->findOrFail($id);
+        return response()->json(['status' => 'success', 'data' => $suggestion]);
+    }
+
+    // Fungsi Dalaman: Jana Nombor Rujukan (FR-004)
+    private function generateReferenceNumber()
+    {
+        $year = date('Y');
+        $lastRecord = Suggestion::whereYear('created_at', $year)
+            ->whereNotNull('reference_no')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $sequence = $lastRecord ? intval(substr($lastRecord->reference_no, -4)) + 1 : 1;
+        return 'KSU-' . $year . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+    }
+}
