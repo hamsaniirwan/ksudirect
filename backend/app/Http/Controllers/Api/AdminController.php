@@ -4,117 +4,74 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Jobs\SendEmailJob;
-use App\Mail\SuggestionNotificationMail;
 use App\Models\Suggestion;
-use App\Models\Division;
 use App\Models\AuditTrail;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\SendEmailJob; // <-- Job Emel Latar Belakang
+use App\Mail\SuggestionNotificationMail; // <-- Templat Mailable
 
-class AdminController extends Controller
+class AdminInboxController extends Controller
 {
-    // FR-011: Dashboard Metrik
-    public function dashboard(Request $request)
-    {
-        $total = Suggestion::where('status', '!=', 'Draft')->count();
-        $pending = Suggestion::where('status', 'Belum Diteliti')->count();
-        $forwarded = Suggestion::where('status', 'Telah Dipanjangkan')->count();
-        $completed = Suggestion::where('status', 'Selesai')->count();
+    // ... (Fungsi index & show kau kekalkan macam biasa) ...
 
-        // Carta Pai (Pecahan Kategori)
-        $categoryBreakdown = Suggestion::select('category', DB::raw('count(*) as total'))
-            ->where('status', '!=', 'Draft')
-            ->groupBy('category')
-            ->get();
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'kpi' => compact('total', 'pending', 'forwarded', 'completed'),
-                'charts' => ['kategori' => $categoryBreakdown]
-            ]
-        ]);
-    }
-
-    // FR-006: Peti Masuk (Senarai) & FR-007 (Boleh guna parameter query untuk filter)
-    public function inbox(Request $request)
-    {
-        $query = Suggestion::with('user', 'division')->where('status', '!=', 'Draft');
-        
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $suggestions = $query->orderBy('created_at', 'desc')->get();
-        return response()->json(['status' => 'success', 'data' => $suggestions]);
-    }
-
-    // Papar Perincian, Jejak Audit & Senarai Bahagian
-    public function show($id)
-    {
-        $suggestion = Suggestion::with(['user', 'division'])->findOrFail($id);
-        $auditTrails = AuditTrail::with('user')->where('suggestion_id', $id)->orderBy('created_at', 'desc')->get();
-        $divisions = Division::all();
-
-        return response()->json([
-            'status' => 'success', 
-            'data' => [
-                'suggestion' => $suggestion,
-                'audit_trails' => $auditTrails,
-                'divisions' => $divisions
-            ]
-        ]);
-    }
-
-    // FR-008 & FR-012: Pembuatan Keputusan & Jejak Audit
     public function decision(Request $request, $id)
     {
         $request->validate([
             'action' => 'required|in:panjangkan,abaikan',
-            'division_id' => 'required_if:action,panjangkan|exists:divisions,id|nullable'
+            'division_id' => 'required_if:action,panjangkan',
+            'remarks' => 'nullable|string'
         ]);
 
-        $suggestion = Suggestion::findOrFail($id);
-        $oldStatus = $suggestion->status;
+        $user = $request->user();
+        $task = Suggestion::findOrFail($id);
+        $oldStatus = $task->status;
 
-        DB::transaction(function () use ($request, $suggestion, $oldStatus) {
+        DB::transaction(function () use ($request, $task, $oldStatus, $user) {
+            
+            // Pertukaran Status
             if ($request->action === 'panjangkan') {
-                $suggestion->status = 'Telah Dipanjangkan';
-                $suggestion->division_id = $request->division_id;
-                $actionName = 'Dipanjangkan ke Bahagian';
+                $task->status = 'Telah Dipanjangkan';
+                $task->division_id = $request->division_id;
             } else {
-                $suggestion->status = 'Tiada Keperluan Tindakan Lanjut';
-                $actionName = 'Tindakan Diabaikan (NFA)';
+                $task->status = 'Ditutup'; // Atau NFA
             }
-            $suggestion->save();
+            $task->save();
 
-            // Rekod Audit (FR-012)
+            // Rekod Audit Trail
             AuditTrail::create([
-                'suggestion_id' => $suggestion->id,
-                'user_id' => $request->user()->id,
-                'action' => $actionName,
+                'suggestion_id' => $task->id,
+                'user_id' => $user->id,
+                'action' => $request->action === 'panjangkan' ? 'Panjangkan ke Bahagian' : 'Tiada Tindakan Lanjut',
                 'old_status' => $oldStatus,
-                'new_status' => $suggestion->status,
-                'remarks' => $request->remarks ?? null,
+                'new_status' => $task->status,
+                'remarks' => $request->remarks,
             ]);
         });
 
-        // TODO untuk Modul 5: Trigger Email kepada Division Head di sini
-
+        // ---------------------------------------------------------
+        // MODUL 5: HANTAR E-MEL ARAHAN KEPADA SUB / KETUA UNIT
+        // ---------------------------------------------------------
         if ($request->action === 'panjangkan') {
-            $divSubject = "KSU Direct - Arahan Tindakan Lanjut KSU";
-            $divBody = "Adalah dimaklumkan bahawa KSU telah menerima satu cadangan penambahbaikan ({$suggestion->reference_no}) untuk diteliti. Sila pihak Bahagian/Unit mengambil tindakan sewajarnya.";
-            $divLink = env('FRONTEND_URL', 'http://localhost:3000') . "/bahagian/tugasan/{$suggestion->id}";
-
-            // Cari Ketua Bahagian untuk bahagian yang dipilih
+            
+            // Cari siapa Ketua Bahagian / SUB untuk division yang dipilih tadi
             $divisionHeads = User::where('role', 'division_head')
-                ->where('division_id', $request->division_id)
-                ->get();
+                                 ->where('division_id', $request->division_id)
+                                 ->get();
+
+            $subject = "KSU Direct - Arahan Tindakan Lanjut Cadangan Penambahbaikan ($task->reference_no)";
+            
+            // Ayat disalin 100% daripada gambar rajah SOP
+            $body = "Adalah dimaklumkan bahawa KSU telah menerima satu cadangan penambahbaikan untuk diteliti. Sila pihak Bahagian/ Unit Ybhg. Datuk/ Dato'/ Dr./ Tuan/ Puan mengambil tindakan sewajarnya berhubung perkara ini. Terima kasih.";
+            
+            // Link ke Modul Ketua Bahagian
+            $link = env('FRONTEND_URL', 'http://localhost:3000') . "/bahagian/tugasan/{$task->id}";
 
             foreach ($divisionHeads as $head) {
-                SendEmailJob::dispatch($head->email, new SuggestionNotificationMail($divSubject, $divBody, $divLink));
+                SendEmailJob::dispatch($head->email, new SuggestionNotificationMail($subject, $body, $link));
             }
         }
-        return response()->json(['status' => 'success', 'message' => 'Tindakan berjaya direkodkan.']);
+
+        return response()->json(['status' => 'success', 'message' => 'Keputusan berjaya disimpan.']);
     }
 }

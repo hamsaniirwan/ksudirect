@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Suggestion;
 use App\Models\AuditTrail;
+use App\Models\User; // <-- Wajib tambah untuk query email pengguna
 use Illuminate\Support\Facades\DB;
+use App\Jobs\SendEmailJob; // <-- Job Emel Latar Belakang
+use App\Mail\SuggestionNotificationMail; // <-- Templat Mailable
 
 class DivisionTaskController extends Controller
 {
@@ -54,7 +57,8 @@ class DivisionTaskController extends Controller
         ]);
 
         $user = $request->user();
-        $task = Suggestion::where('division_id', $user->division_id)->findOrFail($id);
+        // Guna with(['user', 'division']) supaya kita boleh akses nama division & email pengirim nanti
+        $task = Suggestion::with(['user', 'division'])->where('division_id', $user->division_id)->findOrFail($id);
         $oldStatus = $task->status;
 
         DB::transaction(function () use ($request, $task, $oldStatus, $user) {
@@ -72,7 +76,33 @@ class DivisionTaskController extends Controller
             ]);
         });
 
-        // TODO Modul 5: Boleh trigger email kepada Pejabat KSU / Pengguna di sini jika status Selesai
+        // ---------------------------------------------------------
+        // MODUL 5: PENCETUS E-MEL JIKA STATUS "SELESAI"
+        // ---------------------------------------------------------
+        if ($request->status === 'Selesai') {
+            
+            $divisionName = $task->division->name ?? 'Bahagian yang berkaitan';
+            
+            // 1. E-mel kepada Pejabat KSU
+            $ksuSubject = "KSU Direct - Maklum Balas Selesai ($task->reference_no)";
+            $ksuBody = "Tindakan bagi cadangan penambahbaikan bernombor rujukan $task->reference_no telah diselesaikan oleh pihak $divisionName. Ulasan tindakan: " . $request->remarks;
+            $ksuLink = env('FRONTEND_URL', 'http://localhost:3000') . "/admin/peti-masuk/{$task->id}";
+
+            // Dapatkan semua staf Pejabat KSU untuk terima notifikasi ini
+            $ksuOfficers = User::whereIn('role', ['special_officer', 'ksu'])->get();
+            foreach ($ksuOfficers as $officer) {
+                SendEmailJob::dispatch($officer->email, new SuggestionNotificationMail($ksuSubject, $ksuBody, $ksuLink));
+            }
+
+            // 2. E-mel kepada Pengguna (Penghantar Cadangan)
+            $userSubject = "KSU Direct - Cadangan Anda Telah Diselesaikan";
+            $userBody = "Cadangan anda bernombor rujukan $task->reference_no telah diambil tindakan dan diselesaikan. Ulasan maklum balas: " . $request->remarks;
+            $userLink = env('FRONTEND_URL', 'http://localhost:3000') . "/pengguna/semak-cadangan";
+            
+            if ($task->user && $task->user->email) {
+                SendEmailJob::dispatch($task->user->email, new SuggestionNotificationMail($userSubject, $userBody, $userLink));
+            }
+        }
 
         return response()->json(['status' => 'success', 'message' => 'Status tindakan berjaya dikemas kini.']);
     }
