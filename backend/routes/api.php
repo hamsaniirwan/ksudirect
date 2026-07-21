@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SuggestionController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\DivisionTaskController;
+use App\Http\Controllers\Api\AdminInboxController;
 
 // Laluan Terbuka (Public)
 Route::post('/login', [AuthController::class, 'login']);
@@ -25,7 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // --- PASTIKAN SEMUA ROUTE INI DUDUK DI DALAM BLOK MIDDLEWARE INI ---
 
     // Route Modul Pengguna
-    Route::apiResource('suggestions', SuggestionController::class)->only(['index', 'store', 'show']);
+    Route::apiResource('suggestions', SuggestionController::class)->only(['index', 'store', 'show', 'update']);
 
     // Route Modul Admin
     Route::prefix('admin')->group(function () {

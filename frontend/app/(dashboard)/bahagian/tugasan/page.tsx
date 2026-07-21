@@ -19,6 +19,12 @@ export default function PetiMasukBahagian() {
   const [statusFilter, setStatusFilter] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // ==========================================
+  // STATE BARU UNTUK PAGINATION
+  // ==========================================
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12; // Hadkan 12 kad satu page
+
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("token");
@@ -26,11 +32,10 @@ export default function PetiMasukBahagian() {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bahagian/tasks`, {
           headers: { 
             "Authorization": `Bearer ${token}`,
-            "Accept": "application/json" // WAJIB ADA: Beritahu Laravel supaya sentiasa pulangkan JSON
+            "Accept": "application/json" 
           }
         });
         
-        // Semak jika response bukan JSON (sebagai langkah berjaga-jaga)
         const contentType = res.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
           throw new TypeError("Pangkalan pelayan (Server) tidak memulangkan format JSON. Pastikan route API wujud.");
@@ -63,12 +68,31 @@ export default function PetiMasukBahagian() {
     return matchesSearch && matchesStatus;
   });
 
+  // ==========================================
+  // LOGIK PAGINATION
+  // ==========================================
+  // Kembalikan ke page 1 jika pengguna menaip di search atau tukar filter
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  
+  // Data yang telah dipotong untuk page semasa
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Telah Dipanjangkan": 
         return <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[#003B73] border border-blue-200">Baharu</span>;
       case "Dalam Tindakan": 
         return <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 border border-amber-200">Dalam Tindakan</span>;
+      case "Semak Semula": 
+        return <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 border border-red-200 animate-pulse">Semak Semula</span>;
+      case "Dikembalikan": 
+        return <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 border border-slate-200">Dikembalikan</span>;
       case "Selesai": 
       case "Ditutup":
         return <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600 border border-emerald-200">{status}</span>;
@@ -78,7 +102,7 @@ export default function PetiMasukBahagian() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
+    <div className="p-6 md:p-8 mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-800">Peti Masuk Tugasan</h1>
         <p className="mt-1 text-sm text-slate-500">Urus dan kemas kini tindakan bagi cadangan yang disalurkan ke Bahagian anda.</p>
@@ -113,8 +137,10 @@ export default function PetiMasukBahagian() {
           >
             <option value="">Semua Status</option>
             <option value="Telah Dipanjangkan">Baharu (Telah Dipanjangkan)</option>
+            <option value="Semak Semula">Semak Semula (Pemulangan KSU)</option>
             <option value="Dalam Tindakan">Dalam Tindakan</option>
             <option value="Selesai">Selesai</option>
+            <option value="Dikembalikan">Dikembalikan</option>
             <option value="Ditutup">Ditutup</option>
           </select>
         </div>
@@ -134,37 +160,72 @@ export default function PetiMasukBahagian() {
           <p className="text-slate-500 font-medium">Tiada tugasan dijumpai.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredData.map((item) => (
-            <div key={item.id} className="group flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#003B73] transition-all overflow-hidden">
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-3">
-                  <span className="text-xs font-bold tracking-wider text-slate-400">
-                    {item.reference_no}
-                  </span>
-                  {getStatusBadge(item.status)}
-                </div>
-                
-                <h3 className="text-lg font-bold text-slate-800 leading-tight mb-2 group-hover:text-[#003B73] transition-colors line-clamp-2">
-                  {item.title}
-                </h3>
-
-                <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">
-                    Dikemas kini: {new Date(item.updated_at).toLocaleDateString("ms-MY")}
-                  </span>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedData.map((item) => (
+              <div key={item.id} className="group flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#003B73] transition-all overflow-hidden">
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="text-xs font-bold tracking-wider text-slate-400">
+                      {item.reference_no}
+                    </span>
+                    {getStatusBadge(item.status)}
+                  </div>
                   
-                  <Link 
-                    href={`/bahagian/tugasan/${item.id}`} 
-                    className="flex items-center gap-1 text-sm font-semibold text-white bg-[#003B73] px-3 py-1.5 rounded-lg hover:bg-[#002f5c]"
-                  >
-                    Tindakan
-                  </Link>
+                  <h3 className="text-lg font-bold text-slate-800 leading-tight mb-2 group-hover:text-[#003B73] transition-colors line-clamp-2">
+                    {item.title}
+                  </h3>
+
+                  <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">
+                      Dikemas kini: {new Date(item.updated_at).toLocaleDateString("ms-MY")}
+                    </span>
+                    
+                    <Link 
+                      href={`/bahagian/tugasan/${item.id}`} 
+                      className={`flex items-center gap-1 text-sm font-semibold text-white px-3 py-1.5 rounded-lg transition-colors ${item.status === 'Semak Semula' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#003B73] hover:bg-[#002f5c]'}`}
+                    >
+                      Tindakan
+                    </Link>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* ========================================== */}
+          {/* BUTANG PAGINATION */}
+          {/* ========================================== */}
+          {totalPages > 1 && (
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 pt-6 gap-4">
+              <span className="text-sm text-slate-500">
+                Papar <span className="font-semibold text-slate-700">{startIndex + 1}</span> hingga <span className="font-semibold text-slate-700">{Math.min(endIndex, filteredData.length)}</span> daripada <span className="font-semibold text-slate-700">{filteredData.length}</span> tugasan
+              </span>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  &larr; Sebelumnya
+                </button>
+                
+                <span className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg border border-slate-200">
+                  {currentPage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 text-sm font-semibold text-[#003B73] bg-white border border-slate-300 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Seterusnya &rarr;
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -1,54 +1,314 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+  AreaChart, Area 
+} from "recharts";
 
 export default function AdminDashboard() {
   const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("YBhg. Dato' / Datin");
+  
+  // State untuk Dropdown Tahun (Secara lalai, guna tahun semasa)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
   useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        if (userObj.name) setUserName(userObj.name);
+      } catch (e) {
+        console.error("Gagal membaca profil pengguna", e);
+      }
+    }
+  }, []);
+
+  // Fetch data akan dipanggil semula setiap kali 'selectedYear' berubah
+  useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       const token = localStorage.getItem("token");
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard`, {
+        // Hantar tahun yang dipilih sebagai query parameter ke Laravel
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard?year=${selectedYear}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const result = await res.json();
-        if (result.status === "success") setData(result.data);
+        if (result.status === "success") {
+          setData(result.data);
+        }
       } catch (err) {
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
+    
     fetchData();
-  }, []);
+  }, [selectedYear]);
 
-  if (!data) return <div className="p-8 text-slate-500">Memuatkan Papan Pemuka...</div>;
+  const today = new Date().toLocaleDateString("ms-MY", {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  if (loading && !data) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center bg-slate-50/50">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#003B73] border-t-transparent shadow-sm"></div>
+        <p className="mt-4 text-sm font-medium text-slate-500 tracking-wide">Menyediakan Ruang Kerja Eksekutif...</p>
+      </div>
+    );
+  }
+
+  const kpi = data?.kpi || { total: 0, pending: 0, forwarded: 0, completed: 0 };
+  
+  // Data terus dari Laravel API
+  const yearlyData = data?.charts?.yearlyData || [];
+  const monthlyData = data?.charts?.monthlyData || [];
+  const divisionData = data?.charts?.divisionData || [];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">Papan Pemuka Eksekutif</h1>
-        <p className="text-slate-500">Ringkasan statistik cadangan penambahbaikan KSU Direct.</p>
+    <div className="p-6 md:p-8 mx-auto min-h-screen bg-slate-50/30">
+      
+      {/* HEADER EKSEKUTIF */}
+      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <p className="text-xs font-bold text-[#003B73] uppercase tracking-widest mb-1.5">
+            Papan Pemuka KSU Direct
+          </p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            Selamat Datang, {userName}
+          </h1>
+          <p className="mt-2 text-slate-500 text-sm md:text-base">
+            Ringkasan analitik dan status cadangan penambahbaikan setakat <span className="font-semibold text-slate-700">{today}</span>.
+          </p>
+        </div>
+        <div className="shrink-0 flex gap-3">
+           <button onClick={() => window.print()} className="hidden md:inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-5 py-2.5 rounded-xl hover:bg-slate-50 transition-all shadow-sm font-medium">
+             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+             Cetak Laporan
+           </button>
+           <Link href="/admin/peti-masuk" className="inline-flex items-center gap-2 bg-[#003B73] text-white px-5 py-2.5 rounded-xl hover:bg-[#002855] transition-all shadow-md hover:shadow-lg font-medium">
+             Buka Peti Masuk
+             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+           </Link>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Jumlah Keseluruhan</p>
-          <p className="text-4xl font-bold text-[#003B73] mt-2">{data.kpi.total}</p>
+      {/* KAD 1: JUMLAH KESELURUHAN (HERO CARD) */}
+      <div className="relative bg-[#003B73] rounded-2xl shadow-lg mb-6 overflow-hidden flex flex-col md:flex-row justify-between border border-[#002855] group">
+        <div className="p-8 md:p-10 z-10 flex-1 flex flex-col justify-center">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-white/10 rounded-xl border border-white/10 shadow-inner backdrop-blur-sm">
+              <svg className="w-6 h-6 text-blue-50" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <h2 className="text-sm md:text-base font-bold text-white uppercase tracking-widest drop-shadow-sm">
+              Jumlah Keseluruhan Cadangan
+            </h2>
+          </div>
+          <p className="text-blue-100/70 text-sm max-w-xl leading-relaxed">
+            Ringkasan jumlah cadangan penambahbaikan yang telah diterima oleh Kementerian Pengangkutan (MOT) semenjak inisiatif ini dilancarkan.
+          </p>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Belum Diteliti</p>
-          <p className="text-4xl font-bold text-amber-600 mt-2">{data.kpi.pending}</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Dipanjangkan</p>
-          <p className="text-4xl font-bold text-blue-500 mt-2">{data.kpi.forwarded}</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Selesai / Ditutup</p>
-          <p className="text-4xl font-bold text-emerald-600 mt-2">{data.kpi.completed}</p>
+
+        <div className="relative bg-[#002a54] w-full md:w-72 flex items-center justify-center p-10 md:p-0 border-t md:border-t-0 md:border-l border-blue-400/10 overflow-hidden transition-colors group-hover:bg-[#002447]">
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.07] pointer-events-none transform scale-150">
+            <svg className="w-32 h-32 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M4 9h4v11H4zm6-6h4v17h-4zm6 4h4v13h-4z" />
+            </svg>
+          </div>
+          <p className="relative z-10 text-7xl md:text-8xl font-extrabold text-white drop-shadow-lg tracking-tighter">
+            {kpi.total}
+          </p>
         </div>
       </div>
-      {/* Carta atau metrik trend bulanan boleh ditambah di bawah ini */}
+
+      {/* 3 KAD STATISTIK PECAHAN */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+          <div className="absolute top-0 left-0 w-full h-1 bg-amber-500"></div>
+          <div className="flex items-start justify-between mb-6">
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">Belum Diteliti</p>
+            <div className="p-2.5 bg-amber-50 text-amber-500 rounded-xl group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <p className="text-4xl md:text-5xl font-extrabold text-slate-800">{kpi.pending}</p>
+        </div>
+
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+          <div className="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
+          <div className="flex items-start justify-between mb-6">
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">Dipanjangkan</p>
+            <div className="p-2.5 bg-blue-50 text-blue-500 rounded-xl group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+            </div>
+          </div>
+          <p className="text-4xl md:text-5xl font-extrabold text-slate-800">{kpi.forwarded}</p>
+        </div>
+
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+          <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+          <div className="flex items-start justify-between mb-6">
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">Selesai / Ditutup</p>
+            <div className="p-2.5 bg-emerald-50 text-emerald-500 rounded-xl group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </div>
+          </div>
+          <p className="text-4xl md:text-5xl font-extrabold text-slate-800">{kpi.completed}</p>
+        </div>
+      </div>
+
+      {/* GRID VISUALISASI DATA (CARTA / GRAF) */}
+      
+      {/* BARIS 1: Graf Bulanan & Graf Tahunan */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        
+        {/* GRAF 1: Analitik Bulanan Mengikut Status (Lebar - 2 Column) */}
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2 relative">
+          
+          {loading && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center rounded-2xl">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#003B73] border-t-transparent"></div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Trend Status Cadangan (Bulanan)</h3>
+              <p className="text-sm text-slate-500">Pergerakan dan taburan cadangan sepanjang tahun.</p>
+            </div>
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-4 py-2 outline-none focus:ring-1 focus:ring-[#003B73] font-medium"
+            >
+              <option value={new Date().getFullYear().toString()}>Tahun Semasa ({new Date().getFullYear()})</option>
+              <option value={(new Date().getFullYear() - 1).toString()}>Tahun {new Date().getFullYear() - 1}</option>
+              <option value={(new Date().getFullYear() - 2).toString()}>Tahun {new Date().getFullYear() - 2}</option>
+            </select>
+          </div>
+          
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}} 
+                  contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                />
+                <Legend iconType="circle" wrapperStyle={{fontSize: '12px', paddingTop: '20px'}} />
+                <Bar dataKey="pending" name="Belum Diteliti" stackId="a" fill="#f59e0b" maxBarSize={40} />
+                <Bar dataKey="forwarded" name="Dipanjangkan" stackId="a" fill="#3b82f6" maxBarSize={40} />
+                <Bar dataKey="completed" name="Selesai/Ditutup" stackId="a" fill="#10b981" maxBarSize={40} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* GRAF 2: Trend Keseluruhan Tahunan (Kecil - 1 Column) */}
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+          <div className="mb-8">
+            <h3 className="text-lg font-bold text-slate-800">Pertumbuhan Tahunan</h3>
+            <p className="text-sm text-slate-500">Jumlah penerimaan sejak awal.</p>
+          </div>
+          <div className="h-[300px] w-full mt-auto">
+            {yearlyData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={yearlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#003B73" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#003B73" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                  <Tooltip 
+                    contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                  />
+                  <Area type="monotone" dataKey="total" name="Jumlah" stroke="#003B73" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+               <div className="h-full flex items-center justify-center text-sm text-slate-400">Tiada data direkodkan.</div>
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      {/* BARIS 2: Graf Mengikut Bahagian & Status Semasa */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* GRAF 3: Pengagihan Bahagian (Lebar - 2 Column) */}
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2">
+          <div className="mb-8">
+            <h3 className="text-lg font-bold text-slate-800">Tugasan Mengikut Bahagian / Agensi</h3>
+            <p className="text-sm text-slate-500">Bahagian yang paling kerap menerima cadangan penambahbaikan (Top 5).</p>
+          </div>
+          
+          <div className="h-[300px] w-full">
+            {divisionData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={divisionData} layout="vertical" margin={{ top: 0, right: 30, left: 40, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 12, fontWeight: 500}} width={120} />
+                  <Tooltip 
+                    cursor={{fill: '#f8fafc'}}
+                    contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                  />
+                  <Bar dataKey="total" name="Jumlah Cadangan" fill="#003B73" radius={[0, 4, 4, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-slate-400">Tiada bahagian direkodkan setakat ini.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Notifikasi Status Tindakan (Kecil - 1 Column) */}
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+          <h3 className="text-lg font-bold text-slate-800 mb-6">Tindakan Segera</h3>
+          
+          {kpi.pending > 0 ? (
+            <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-6 flex-1 flex flex-col justify-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4"></div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+                <p className="font-extrabold text-amber-900 tracking-wide text-lg">Perhatian!</p>
+              </div>
+              <p className="text-sm text-amber-800 leading-relaxed mb-6 font-medium">
+                Terdapat <span className="font-extrabold text-amber-900 bg-amber-200/50 px-2 py-0.5 rounded mx-1">{kpi.pending}</span> cadangan baharu yang belum dibaca dan diuruskan.
+              </p>
+              <Link href="/admin/peti-masuk" className="mt-auto block w-full text-center text-sm font-bold text-white bg-amber-500 hover:bg-amber-600 py-3.5 rounded-xl shadow-sm transition-all hover:shadow-md">
+                Urus Peti Masuk
+              </Link>
+            </div>
+          ) : (
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-6 text-center flex-1 flex flex-col items-center justify-center">
+              <div className="mx-auto w-16 h-16 bg-white shadow-sm border border-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-5">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+              </div>
+              <p className="font-extrabold text-emerald-900 mb-2 text-lg">Sifar Tertunggak</p>
+              <p className="text-sm text-emerald-700/80 leading-relaxed font-medium">
+                Syabas! Anda telah menyelesaikan kesemua saringan awal dalam sistem.
+              </p>
+            </div>
+          )}
+        </div>
+
+      </div>
     </div>
   );
 }

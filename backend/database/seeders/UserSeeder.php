@@ -20,8 +20,7 @@ class UserSeeder extends Seeder
         $users = [
             [
                 'name' => 'Ahmad (Pegawai MOT)',
-                'email' => 'hamsani7@gmail.com',
-                //'email' => 'officer@mot.gov.my',
+                'email' => 'officer@mot.gov.my',
                 'password' => Hash::make('password123'),
                 'role' => 'user',
                 'division_id' => null,
@@ -44,7 +43,8 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Dr. Kamal (Ketua Bahagian)',
-                'email' => 'sub@mot.gov.my',
+                'email' => 'hamsani7@gmail.com',
+                //'email' => 'sub@mot.gov.my',
                 'password' => Hash::make('password123'),
                 'role' => 'division_head',
                 'division_id' => $bahagianIT->id, // <-- Pautkan Dr. Kamal ke Bahagian IT

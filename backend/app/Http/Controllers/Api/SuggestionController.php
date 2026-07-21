@@ -112,4 +112,93 @@ class SuggestionController extends Controller
         $sequence = $lastRecord ? intval(substr($lastRecord->reference_no, -4)) + 1 : 1;
         return 'KSU-' . $year . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
+
+    // ====================================================================
+    // TAMBAHKAN FUNGSI INI UNTUK MENGEMASKINI DRAF
+    // ====================================================================
+    public function update(Request $request, $id)
+    {
+        $suggestion = Suggestion::where('user_id', $request->user()->id)->findOrFail($id);
+
+        // Pastikan HANYA status Draft sahaja yang boleh dikemaskini
+        if ($suggestion->status !== 'Draft') {
+            return response()->json(['status' => 'error', 'message' => 'Hanya draf yang boleh dikemaskini.'], 403);
+        }
+
+        $request->validate([
+            'category' => 'required|string',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'attachment' => 'nullable|file|mimes:pdf,docx,xlsx,jpg,png|max:20480',
+            'is_draft' => 'required|boolean'
+        ]);
+
+        if (str_word_count($request->description) > 100) {
+            throw ValidationException::withMessages([
+                'description' => ['Penerangan tidak boleh melebihi 100 patah perkataan.']
+            ]);
+        }
+
+        $suggestion->category = $request->category;
+        $suggestion->title = $request->title;
+        $suggestion->description = $request->description;
+
+        // Jika butang "Hantar" ditekan (Bukan lagi draf)
+        if (!$request->is_draft) {
+            $suggestion->status = 'Belum Diteliti';
+            $suggestion->reference_no = $this->generateReferenceNumber();
+        }
+
+        // Pengurusan Fail Lampiran
+        if ($request->hasFile('attachment')) {
+            // Padam fail lama jika wujud
+            if ($suggestion->attachment && Storage::disk('public')->exists($suggestion->attachment)) {
+                Storage::disk('public')->delete($suggestion->attachment);
+            }
+
+            $file = $request->file('attachment');
+            $extension = $file->getClientOriginalExtension();
+            
+            $filename = isset($suggestion->reference_no) 
+                ? $suggestion->reference_no . '.' . $extension 
+                : 'DRAF_' . time() . '.' . $extension;
+
+            $suggestion->attachment = $file->storeAs('attachments', $filename, 'public');
+        } 
+        // Jika pengguna hantar draf sedia ada yang dah ada fail, tukar nama fail lama itu ke No Rujukan rasmi
+        else if (!$request->is_draft && $suggestion->attachment) {
+             $oldPath = $suggestion->attachment;
+             $extension = pathinfo($oldPath, PATHINFO_EXTENSION);
+             $newName = 'attachments/' . $suggestion->reference_no . '.' . $extension;
+             
+             if (Storage::disk('public')->exists($oldPath)) {
+                 Storage::disk('public')->move($oldPath, $newName);
+                 $suggestion->attachment = $newName;
+             }
+        }
+
+        $suggestion->save();
+
+        // Trigger Email jika draf akhirnya dihantar
+        if (!$request->is_draft) {
+            $submitterSubject = "KSU Direct - Status Penghantaran";
+            $submitterBody = "Cadangan anda ({$suggestion->reference_no}) telah diterima dan dikemukakan kepada Pejabat Ketua Setiausaha.";
+            SendEmailJob::dispatch($request->user()->email, new SuggestionNotificationMail($submitterSubject, $submitterBody));
+
+            $ksuSubject = "KSU Direct - Cadangan Baharu Diterima";
+            $ksuBody = "KSU telah menerima satu cadangan penambahbaikan baharu ({$suggestion->reference_no}) untuk diteliti.";
+            $ksuLink = env('FRONTEND_URL', 'http://10.25.62.106:3000') . "/admin/peti-masuk/{$suggestion->id}";
+            
+            $ksuOfficers = User::whereIn('role', ['special_officer', 'ksu'])->get();
+            foreach ($ksuOfficers as $officer) {
+                SendEmailJob::dispatch($officer->email, new SuggestionNotificationMail($ksuSubject, $ksuBody, $ksuLink));
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $request->is_draft ? 'Draf berjaya dikemaskini.' : 'Cadangan berjaya dihantar.',
+            'data' => $suggestion
+        ]);
+    }
 }

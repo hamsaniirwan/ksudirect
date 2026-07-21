@@ -372,12 +372,12 @@ export default function DashboardLayout({
               >
                 Log Masuk Semula
               </button>
-              <button 
+              {/* <button 
                 onClick={() => setShowIdleModal(false)}
                 className="w-full px-5 py-3 text-slate-500 font-semibold hover:bg-slate-100 rounded-xl transition-colors"
               >
                 Kembali
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

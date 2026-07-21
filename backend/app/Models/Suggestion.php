@@ -11,7 +11,7 @@ class Suggestion extends Model
 
     protected $fillable = [
         'user_id', 
-        'division_id', // <-- Tambah ini
+        'division_id', 
         'reference_no', 
         'category', 
         'title', 
@@ -25,9 +25,14 @@ class Suggestion extends Model
         return $this->belongsTo(User::class);
     }
 
-    // <-- TAMBAH HUBUNGAN INI SUPAYA LARAVEL BOLEH BACA
     public function division() 
     {
         return $this->belongsTo(Division::class);
+    }
+
+    // <-- TAMBAH HUBUNGAN INI UNTUK AUDIT TRAIL
+    public function auditTrails()
+    {
+        return $this->hasMany(AuditTrail::class);
     }
 }

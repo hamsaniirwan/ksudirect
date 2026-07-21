@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import * as XLSX from "xlsx"; // <-- Import library Excel
 
 type Suggestion = {
   id: number;
@@ -25,6 +26,12 @@ export default function AdminInbox() {
   // State untuk Filter & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+
+  // ==========================================
+  // STATE BARU UNTUK PAGINATION
+  // ==========================================
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12; // Hadkan 12 kad satu page
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,10 +72,7 @@ export default function AdminInbox() {
     fetchData();
   }, [router]);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
+  // Logik tapisan data
   const filteredData = data.filter((item) => {
     const searchLower = searchQuery.toLowerCase();
     const matchesSearch = 
@@ -80,6 +84,50 @@ export default function AdminInbox() {
     return matchesSearch && matchesStatus;
   });
 
+  // ==========================================
+  // LOGIK PAGINATION
+  // ==========================================
+  // Kembalikan ke page 1 jika pengguna menaip di search atau tukar filter
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  
+  // Data yang telah dipotong untuk page semasa
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  // FUNGSI EXPORT KE EXCEL
+  const handleExportExcel = () => {
+    if (filteredData.length === 0) {
+      alert("Tiada data untuk dimuat turun.");
+      return;
+    }
+
+    // 1. Susun semula format data untuk Excel (Sentiasa export semua data yang ditapis, bukan takat data di page semasa)
+    const excelData = filteredData.map((item, index) => ({
+      "Bil.": index + 1,
+      "No. Rujukan": item.reference_no || "TIADA RUJUKAN",
+      "Kategori": item.category,
+      "Tajuk Cadangan": item.title,
+      "Dikemukakan Oleh": item.user?.name || "Pengguna Tidak Diketahui",
+      "Status Semasa": item.status,
+      "Tarikh Dicipta": new Date(item.created_at).toLocaleDateString("ms-MY", {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+    }));
+
+    // 2. Buat Lembaran Kerja (Worksheet) & Buku Kerja (Workbook)
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Senarai Cadangan");
+
+    // 3. Muat Turun Fail
+    XLSX.writeFile(workbook, "Senarai_Cadangan_KSU_Direct.xlsx");
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Draft": 
@@ -88,15 +136,20 @@ export default function AdminInbox() {
         return <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 border border-amber-200">Belum Diteliti</span>;
       case "Telah Dipanjangkan": 
         return <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[#003B73] border border-blue-200">Dipanjangkan</span>;
+      case "Semak Semula": 
+        return <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 border border-red-200">Semak Semula</span>;
+      case "Dikembalikan": 
+        return <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 border border-slate-300">Dikembalikan</span>;
       case "Selesai": 
-        return <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600 border border-emerald-200">Selesai</span>;
+      case "Ditutup":
+        return <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600 border border-emerald-200">{status}</span>;
       default: 
         return <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 border border-slate-200">{status}</span>;
     }
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
+    <div className="p-6 md:p-8 mx-auto">
       
       {/* Bahagian Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -105,13 +158,14 @@ export default function AdminInbox() {
           <p className="mt-1 text-sm text-slate-500">Senarai cadangan untuk semakan Pejabat KSU.</p>
         </div>
         <button 
-          onClick={handlePrint} 
-          className="hidden md:flex shrink-0 items-center gap-2 bg-white border border-slate-300 text-slate-700 px-5 py-2.5 rounded-lg hover:bg-slate-50 font-medium transition-colors shadow-sm print:hidden"
+          onClick={handleExportExcel} 
+          className="hidden md:flex shrink-0 items-center gap-2 bg-emerald-600 border border-emerald-700 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-700 font-medium transition-colors shadow-sm"
         >
+          {/* Ikon Excel */}
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          Cetak PDF
+          Muat Turun Excel
         </button>
       </div>
 
@@ -121,8 +175,8 @@ export default function AdminInbox() {
         </div>
       )}
 
-      {/* Bahagian Filter & Search (Disembunyikan semasa print) */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm print:hidden">
+      {/* Bahagian Filter & Search */}
+      <div className="mb-6 flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex-1 relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -145,20 +199,23 @@ export default function AdminInbox() {
             <option value="">Semua Status</option>
             <option value="Belum Diteliti">Belum Diteliti</option>
             <option value="Telah Dipanjangkan">Telah Dipanjangkan</option>
+            <option value="Semak Semula">Semak Semula</option>
+            <option value="Dikembalikan">Dikembalikan</option>
             <option value="Tiada Keperluan Tindakan Lanjut">Tiada Keperluan Tindakan Lanjut</option>
             <option value="Selesai">Selesai</option>
+            <option value="Ditutup">Ditutup</option>
           </select>
         </div>
       </div>
 
       {/* Paparan Senarai (Grid Cards) */}
       {loading ? (
-        <div className="text-center py-12 text-slate-500 print:hidden">
+        <div className="text-center py-12 text-slate-500">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#003B73] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status"></div>
           <p className="mt-4 font-medium">Sedang memuatkan data...</p>
         </div>
       ) : filteredData.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed print:hidden">
+        <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
           <svg className="mx-auto h-12 w-12 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
           </svg>
@@ -173,46 +230,81 @@ export default function AdminInbox() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:grid-cols-2 print:gap-4">
-          {filteredData.map((item) => (
-            <div 
-              key={item.id} 
-              className="group flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden print:break-inside-avoid print:shadow-none print:border-slate-300"
-            >
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs font-bold tracking-wider text-slate-400">
-                    {item.reference_no || "TIADA RUJUKAN"}
-                  </span>
-                  {getStatusBadge(item.status)}
-                </div>
-                
-                <h3 className="text-lg font-bold text-slate-800 leading-tight mb-4 group-hover:text-[#003B73] transition-colors line-clamp-2 print:line-clamp-none">
-                  {item.title}
-                </h3>
-                
-                <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Dikemukakan Oleh</span>
-                    <span className="text-sm font-medium text-slate-700 truncate max-w-[150px]" title={item.user?.name}>
-                      {item.user?.name || "Pengguna Tidak Diketahui"}
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedData.map((item) => (
+              <div 
+                key={item.id} 
+                className="group flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden"
+              >
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="text-xs font-bold tracking-wider text-slate-400">
+                      {item.reference_no || "TIADA RUJUKAN"}
                     </span>
+                    {getStatusBadge(item.status)}
                   </div>
                   
-                  <Link 
-                    href={`/admin/peti-masuk/${item.id}`} 
-                    className="flex shrink-0 items-center gap-1 text-sm font-semibold text-[#003B73] group-hover:underline bg-blue-50 px-3 py-1.5 rounded-lg print:hidden"
-                  >
-                    Semak
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
+                  <h3 className="text-lg font-bold text-slate-800 leading-tight mb-4 group-hover:text-[#003B73] transition-colors line-clamp-2">
+                    {item.title}
+                  </h3>
+                  
+                  <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Dikemukakan Oleh</span>
+                      <span className="text-sm font-medium text-slate-700 truncate max-w-[150px]" title={item.user?.name}>
+                        {item.user?.name || "Pengguna Tidak Diketahui"}
+                      </span>
+                    </div>
+                    
+                    <Link 
+                      href={`/admin/peti-masuk/${item.id}`} 
+                      className="flex shrink-0 items-center gap-1 text-sm font-semibold text-[#003B73] group-hover:underline bg-blue-50 px-3 py-1.5 rounded-lg"
+                    >
+                      Semak
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* ========================================== */}
+          {/* BUTANG PAGINATION */}
+          {/* ========================================== */}
+          {totalPages > 1 && (
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 pt-6 gap-4">
+              <span className="text-sm text-slate-500">
+                Papar <span className="font-semibold text-slate-700">{startIndex + 1}</span> hingga <span className="font-semibold text-slate-700">{Math.min(endIndex, filteredData.length)}</span> daripada <span className="font-semibold text-slate-700">{filteredData.length}</span> rekod
+              </span>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  &larr; Sebelumnya
+                </button>
+                
+                <span className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg border border-slate-200">
+                  {currentPage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 text-sm font-semibold text-[#003B73] bg-white border border-slate-300 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Seterusnya &rarr;
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

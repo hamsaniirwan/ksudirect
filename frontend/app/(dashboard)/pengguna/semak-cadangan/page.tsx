@@ -20,6 +20,12 @@ export default function SemakCadangan() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
+  // ==========================================
+  // STATE BARU UNTUK PAGINATION
+  // ==========================================
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12; // Hadkan 12 kad satu page
+
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("token");
@@ -52,6 +58,21 @@ export default function SemakCadangan() {
     return matchesSearch && matchesStatus;
   });
 
+  // ==========================================
+  // LOGIK PAGINATION
+  // ==========================================
+  // Kembalikan ke page 1 jika pengguna menaip di search atau tukar filter
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  
+  // Data yang telah dipotong untuk page semasa
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Draft": 
@@ -68,7 +89,7 @@ export default function SemakCadangan() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
+    <div className="p-6 md:p-8 mx-auto">
       
       {/* Bahagian Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -137,49 +158,84 @@ export default function SemakCadangan() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredData.map((item) => (
-            <div 
-              key={item.id} 
-              className="group flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden"
-            >
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-3">
-                  <span className="text-xs font-bold tracking-wider text-slate-400">
-                    {item.reference_no || "TIADA RUJUKAN"}
-                  </span>
-                  {getStatusBadge(item.status)}
-                </div>
-                
-                <h3 className="text-lg font-bold text-slate-800 leading-tight mb-2 group-hover:text-[#003B73] transition-colors line-clamp-2">
-                  {item.title}
-                </h3>
-                
-                <span className="inline-block bg-slate-50 text-slate-500 text-xs px-2 py-1 rounded w-fit mb-4">
-                  {item.category}
-                </span>
-
-                <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">
-                    {new Date(item.created_at).toLocaleDateString("ms-MY", {
-                      day: 'numeric', month: 'short', year: 'numeric'
-                    })}
-                  </span>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedData.map((item) => (
+              <div 
+                key={item.id} 
+                className="group flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden"
+              >
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="text-xs font-bold tracking-wider text-slate-400">
+                      {item.reference_no || "TIADA RUJUKAN"}
+                    </span>
+                    {getStatusBadge(item.status)}
+                  </div>
                   
-                  <Link 
-                    href={`/pengguna/semak-cadangan/${item.id}`} 
-                    className="flex items-center gap-1 text-sm font-semibold text-[#003B73] group-hover:underline"
-                  >
-                    Lihat
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
+                  <h3 className="text-lg font-bold text-slate-800 leading-tight mb-2 group-hover:text-[#003B73] transition-colors line-clamp-2">
+                    {item.title}
+                  </h3>
+                  
+                  <span className="inline-block bg-slate-50 text-slate-500 text-xs px-2 py-1 rounded w-fit mb-4">
+                    {item.category}
+                  </span>
+
+                  <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">
+                      {new Date(item.created_at).toLocaleDateString("ms-MY", {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                      })}
+                    </span>
+                    
+                    <Link 
+                      href={`/pengguna/semak-cadangan/${item.id}`} 
+                      className="flex items-center gap-1 text-sm font-semibold text-[#003B73] group-hover:underline"
+                    >
+                      Lihat
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* ========================================== */}
+          {/* BUTANG PAGINATION */}
+          {/* ========================================== */}
+          {totalPages > 1 && (
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 pt-6 gap-4">
+              <span className="text-sm text-slate-500">
+                Papar <span className="font-semibold text-slate-700">{startIndex + 1}</span> hingga <span className="font-semibold text-slate-700">{Math.min(endIndex, filteredData.length)}</span> daripada <span className="font-semibold text-slate-700">{filteredData.length}</span> rekod
+              </span>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  &larr; Sebelumnya
+                </button>
+                
+                <span className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg border border-slate-200">
+                  {currentPage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 text-sm font-semibold text-[#003B73] bg-white border border-slate-300 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Seterusnya &rarr;
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
