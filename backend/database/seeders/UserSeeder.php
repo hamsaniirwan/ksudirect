@@ -5,18 +5,17 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Models\Division; // Wajib import Model Division
+use App\Models\Division;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Cipta satu Bahagian (Division) ujian
-        $bahagianIT = Division::create([
-            'name' => 'Bahagian Pengurusan Maklumat (BPM)'
-        ]);
+        // 1. Cari Bahagian Teknologi Digital dari database 
+        // (Pastikan DivisionSeeder dijalankan sebelum UserSeeder)
+        $bahagianIT = Division::where('name', 'Bahagian Teknologi Digital')->first();
 
-        // 2. Senarai pengguna
+        // 2. Senarai pengguna (Kekalkan emel untuk ujian)
         $users = [
             [
                 'name' => 'Ahmad (Pegawai MOT)',
@@ -47,7 +46,8 @@ class UserSeeder extends Seeder
                 //'email' => 'sub@mot.gov.my',
                 'password' => Hash::make('password123'),
                 'role' => 'division_head',
-                'division_id' => $bahagianIT->id, // <-- Pautkan Dr. Kamal ke Bahagian IT
+                // Pautkan Dr. Kamal ke Bahagian Teknologi Digital (ID 12)
+                'division_id' => $bahagianIT ? $bahagianIT->id : 12, 
             ],
             [
                 'name' => 'Pentadbir Sistem',

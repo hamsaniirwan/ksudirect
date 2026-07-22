@@ -6,21 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('divisions', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name', 150)->nullable(); // Asalnya 'diskripsi'
+            $table->string('email', 150)->nullable();
+            $table->tinyInteger('is_deleted')->default(0)->nullable();
+            $table->integer('id_pencipta')->nullable();
+            $table->integer('pengguna')->nullable();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('divisions');

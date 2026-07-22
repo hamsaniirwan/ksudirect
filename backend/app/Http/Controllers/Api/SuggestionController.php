@@ -114,15 +114,18 @@ class SuggestionController extends Controller
     }
 
     // ====================================================================
-    // TAMBAHKAN FUNGSI INI UNTUK MENGEMASKINI DRAF
+    // FUNGSI UNTUK MENGEMASKINI DRAF & CADANGAN
     // ====================================================================
     public function update(Request $request, $id)
     {
         $suggestion = Suggestion::where('user_id', $request->user()->id)->findOrFail($id);
 
-        // Pastikan HANYA status Draft sahaja yang boleh dikemaskini
-        if ($suggestion->status !== 'Draft') {
-            return response()->json(['status' => 'error', 'message' => 'Hanya draf yang boleh dikemaskini.'], 403);
+        // Halang kemaskini JIKA status dah Selesai/Ditutup
+        if (in_array($suggestion->status, ['Selesai', 'Ditutup', 'Tiada Keperluan Tindakan Lanjut'])) {
+            return response()->json([
+                'status' => 'error', 
+                'message' => 'Cadangan yang telah selesai atau ditutup tidak boleh dikemaskini.'
+            ], 403);
         }
 
         $request->validate([
@@ -139,12 +142,15 @@ class SuggestionController extends Controller
             ]);
         }
 
+        // Tanda adakah ini draf baru nak hantar, atau cadangan sedia ada yang diedit
+        $isAlreadySubmitted = $suggestion->status !== 'Draft';
+
         $suggestion->category = $request->category;
         $suggestion->title = $request->title;
         $suggestion->description = $request->description;
 
-        // Jika butang "Hantar" ditekan (Bukan lagi draf)
-        if (!$request->is_draft) {
+        // Jika asalnya draf dan butang "Hantar" ditekan
+        if (!$isAlreadySubmitted && !$request->is_draft) {
             $suggestion->status = 'Belum Diteliti';
             $suggestion->reference_no = $this->generateReferenceNumber();
         }
@@ -166,7 +172,7 @@ class SuggestionController extends Controller
             $suggestion->attachment = $file->storeAs('attachments', $filename, 'public');
         } 
         // Jika pengguna hantar draf sedia ada yang dah ada fail, tukar nama fail lama itu ke No Rujukan rasmi
-        else if (!$request->is_draft && $suggestion->attachment) {
+        else if (!$request->is_draft && !$isAlreadySubmitted && $suggestion->attachment) {
              $oldPath = $suggestion->attachment;
              $extension = pathinfo($oldPath, PATHINFO_EXTENSION);
              $newName = 'attachments/' . $suggestion->reference_no . '.' . $extension;
@@ -179,25 +185,44 @@ class SuggestionController extends Controller
 
         $suggestion->save();
 
-        // Trigger Email jika draf akhirnya dihantar
+        // ===============================================
+        // PENGHANTARAN EMEL 
+        // ===============================================
         if (!$request->is_draft) {
-            $submitterSubject = "KSU Direct - Status Penghantaran";
-            $submitterBody = "Cadangan anda ({$suggestion->reference_no}) telah diterima dan dikemukakan kepada Pejabat Ketua Setiausaha.";
-            SendEmailJob::dispatch($request->user()->email, new SuggestionNotificationMail($submitterSubject, $submitterBody));
+            if (!$isAlreadySubmitted) {
+                // KES 1: Dari DRAF -> HANTAR (Kali Pertama)
+                $submitterSubject = "KSU Direct - Status Penghantaran";
+                $submitterBody = "Cadangan anda ({$suggestion->reference_no}) telah diterima dan dikemukakan kepada Pejabat Ketua Setiausaha.";
+                SendEmailJob::dispatch($request->user()->email, new SuggestionNotificationMail($submitterSubject, $submitterBody));
 
-            $ksuSubject = "KSU Direct - Cadangan Baharu Diterima";
-            $ksuBody = "KSU telah menerima satu cadangan penambahbaikan baharu ({$suggestion->reference_no}) untuk diteliti.";
-            $ksuLink = env('FRONTEND_URL', 'http://10.25.62.106:3000') . "/admin/peti-masuk/{$suggestion->id}";
-            
-            $ksuOfficers = User::whereIn('role', ['special_officer', 'ksu'])->get();
-            foreach ($ksuOfficers as $officer) {
-                SendEmailJob::dispatch($officer->email, new SuggestionNotificationMail($ksuSubject, $ksuBody, $ksuLink));
+                $ksuSubject = "KSU Direct - Cadangan Baharu Diterima";
+                $ksuBody = "KSU telah menerima satu cadangan penambahbaikan baharu ({$suggestion->reference_no}) untuk diteliti.";
+                $ksuLink = env('FRONTEND_URL', 'http://10.25.62.106:3000') . "/admin/peti-masuk/{$suggestion->id}";
+                
+                $ksuOfficers = User::whereIn('role', ['special_officer', 'ksu'])->get();
+                foreach ($ksuOfficers as $officer) {
+                    SendEmailJob::dispatch($officer->email, new SuggestionNotificationMail($ksuSubject, $ksuBody, $ksuLink));
+                }
+            } else {
+                // KES 2: KEMASKINI CADANGAN SEDIA ADA
+                $submitterSubject = "KSU Direct - Maklumat Dikemaskini";
+                $submitterBody = "Cadangan anda ({$suggestion->reference_no}) telah berjaya dikemaskini. Pihak Pengurusan telah dimaklumkan mengenai pindaan ini.";
+                SendEmailJob::dispatch($request->user()->email, new SuggestionNotificationMail($submitterSubject, $submitterBody));
+
+                $ksuSubject = "KSU Direct - Cadangan Dikemaskini Pengguna";
+                $ksuBody = "Perhatian: Pengguna telah mengemaskini/meminda maklumat pada cadangan ({$suggestion->reference_no}). Sila semak perincian terkini di dalam sistem.";
+                $ksuLink = env('FRONTEND_URL', 'http://10.25.62.106:3000') . "/admin/peti-masuk/{$suggestion->id}";
+                
+                $ksuOfficers = User::whereIn('role', ['special_officer', 'ksu'])->get();
+                foreach ($ksuOfficers as $officer) {
+                    SendEmailJob::dispatch($officer->email, new SuggestionNotificationMail($ksuSubject, $ksuBody, $ksuLink));
+                }
             }
         }
 
         return response()->json([
             'status' => 'success',
-            'message' => $request->is_draft ? 'Draf berjaya dikemaskini.' : 'Cadangan berjaya dihantar.',
+            'message' => $request->is_draft ? 'Draf berjaya dikemaskini.' : 'Cadangan berjaya dikemaskini/dihantar.',
             'data' => $suggestion
         ]);
     }

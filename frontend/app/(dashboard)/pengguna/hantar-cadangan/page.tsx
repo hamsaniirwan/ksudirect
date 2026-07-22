@@ -7,11 +7,11 @@ export default function HantarCadangan() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  
+
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [isDraftAction, setIsDraftAction] = useState(false);
-  
+
   // Form State
   const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
@@ -70,8 +70,8 @@ export default function HantarCadangan() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suggestions`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/json"
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
         body: formData,
       });
@@ -91,27 +91,46 @@ export default function HantarCadangan() {
   };
 
   return (
-    <div className="p-8 mx-auto relative">
+    <div className="relative mx-auto p-4 font-body md:p-8">
+      {/* Google Fonts: institutional serif for headings, technical sans for UI */}
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+        .font-display {
+          font-family: "Fraunces", ui-serif, Georgia, serif;
+          font-optical-sizing: auto;
+        }
+        .font-body {
+          font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+        }
+      `}</style>
+
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">Hantar Cadangan Baharu</h1>
-        <p className="mt-1 text-slate-500">Sila isi butiran cadangan anda di bawah.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#B08B3E]">Cadangan Baharu</p>
+        <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight text-[#0A1F3D] md:text-3xl">
+          Hantar Cadangan Baharu
+        </h1>
+        <p className="mt-2 text-[#64748B]">Sila isi butiran cadangan anda di bawah.</p>
       </div>
 
       {errorMsg && (
-        <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200">
-          {errorMsg}
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-[#FDA29B] bg-[#FEF3F2] p-4 text-sm text-[#B42318]">
+          <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <span>{errorMsg}</span>
         </div>
       )}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+      <div className="rounded-2xl border border-[#E5E0D3] bg-white p-6 shadow-sm md:p-8">
         <div className="space-y-6">
-          
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Kategori <span className="text-red-500">*</span></label>
+            <label className="mb-2 block text-sm font-semibold text-[#1F2937]">
+              Kategori <span className="text-[#B42318]">*</span>
+            </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-800 focus:border-[#003B73] focus:ring-1 focus:ring-[#003B73] outline-none transition-colors"
+              className="w-full rounded-lg border border-[#DDD7C7] px-4 py-3 text-[#1F2937] outline-none transition-colors focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D]"
             >
               <option value="">-- Pilih Kategori --</option>
               <option value="Penyampaian perkhidmatan">Penyampaian Perkhidmatan</option>
@@ -120,20 +139,24 @@ export default function HantarCadangan() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Tajuk Cadangan <span className="text-red-500">*</span></label>
+            <label className="mb-2 block text-sm font-semibold text-[#1F2937]">
+              Tajuk Cadangan <span className="text-[#B42318]">*</span>
+            </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Masukkan tajuk ringkas"
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-800 focus:border-[#003B73] focus:ring-1 focus:ring-[#003B73] outline-none transition-colors"
+              className="w-full rounded-lg border border-[#DDD7C7] px-4 py-3 text-[#1F2937] placeholder-[#9CA3AF] outline-none transition-colors focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D]"
             />
           </div>
 
           <div>
-            <div className="flex justify-between mb-2">
-              <label className="block text-sm font-semibold text-slate-700">Penerangan / Justifikasi <span className="text-red-500">*</span></label>
-              <span className={`text-xs font-bold ${isOverLimit ? "text-red-600" : "text-slate-500"}`}>
+            <div className="mb-2 flex justify-between">
+              <label className="block text-sm font-semibold text-[#1F2937]">
+                Penerangan / Justifikasi <span className="text-[#B42318]">*</span>
+              </label>
+              <span className={`text-xs font-bold ${isOverLimit ? "text-[#B42318]" : "text-[#64748B]"}`}>
                 {wordCount} / 100 Patah Perkataan
               </span>
             </div>
@@ -142,36 +165,40 @@ export default function HantarCadangan() {
               value={description}
               onChange={handleDescriptionChange}
               placeholder="Terangkan cadangan anda di sini..."
-              className={`w-full rounded-lg border px-4 py-3 text-slate-800 outline-none transition-colors ${
-                isOverLimit ? "border-red-500 focus:ring-red-500" : "border-slate-300 focus:border-[#003B73] focus:ring-1 focus:ring-[#003B73]"
+              className={`w-full rounded-lg border px-4 py-3 text-[#1F2937] outline-none transition-colors ${
+                isOverLimit
+                  ? "border-[#B42318] focus:ring-[#B42318]"
+                  : "border-[#DDD7C7] focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D]"
               }`}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Lampiran Dokumen <span className="text-slate-400 font-normal">(Pilihan - Maksimum 20MB)</span></label>
+            <label className="mb-2 block text-sm font-semibold text-[#1F2937]">
+              Lampiran Dokumen{" "}
+              <span className="font-normal text-[#94A3B8]">(Pilihan - Maksimum 20MB)</span>
+            </label>
             <input
               type="file"
               accept=".pdf,.docx,.xlsx,.jpg,.png"
               onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-              className="block w-full text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-[#003B73] hover:file:bg-blue-100 transition-all"
+              className="block w-full text-sm text-[#64748B] transition-all file:mr-4 file:rounded-lg file:border-0 file:bg-[#0A1F3D]/[0.06] file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-[#0A1F3D] hover:file:bg-[#0A1F3D]/[0.1]"
             />
           </div>
-
         </div>
 
-        <div className="mt-10 flex flex-col-reverse gap-4 sm:flex-row sm:justify-end border-t border-slate-100 pt-6">
+        <div className="mt-10 flex flex-col-reverse gap-4 border-t border-[#E5E0D3] pt-6 sm:flex-row sm:justify-end">
           <button
             onClick={() => triggerConfirmation(true)}
             disabled={loading || isOverLimit}
-            className="rounded-lg px-6 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50"
+            className="rounded-lg px-6 py-3 text-sm font-semibold text-[#475569] transition-colors hover:bg-[#F2EEE4] disabled:opacity-50"
           >
             Simpan Sebagai Draf
           </button>
           <button
             onClick={() => triggerConfirmation(false)}
             disabled={loading || isOverLimit}
-            className="rounded-lg bg-[#003B73] px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-[#002f5c] transition-colors disabled:opacity-50"
+            className="rounded-lg bg-[#0A1F3D] px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#0F2A4D] disabled:opacity-50"
           >
             {loading ? "Menyimpan..." : "Hantar Cadangan"}
           </button>
@@ -180,32 +207,36 @@ export default function HantarCadangan() {
 
       {/* Pop Up Modal Pengesahan */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl text-center">
-            
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-              <svg className="h-6 w-6 text-[#003B73]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A1F3D]/60 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#0A1F3D]/[0.08]">
+              <svg className="h-6 w-6 text-[#0A1F3D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
 
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Adakah anda pasti?</h3>
-            <p className="text-sm text-slate-500 mb-6">
-              {isDraftAction 
-                ? "Cadangan ini akan disimpan ke dalam senarai Draf anda." 
+            <h3 className="font-display mb-2 text-xl font-semibold text-[#0A1F3D]">Adakah anda pasti?</h3>
+            <p className="mb-6 text-sm text-[#64748B]">
+              {isDraftAction
+                ? "Cadangan ini akan disimpan ke dalam senarai Draf anda."
                 : "Cadangan ini akan dihantar secara rasmi kepada Pejabat KSU."}
             </p>
-            
+
             <div className="flex justify-center gap-3">
-              <button 
+              <button
                 onClick={() => setShowModal(false)}
-                className="px-5 py-2.5 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-colors"
+                className="rounded-xl px-5 py-2.5 font-semibold text-[#475569] transition-colors hover:bg-[#F2EEE4]"
               >
                 Kembali
               </button>
-              <button 
+              <button
                 onClick={handleConfirm}
-                className="px-5 py-2.5 bg-[#003B73] text-white font-semibold rounded-xl hover:bg-[#002f5c] shadow-md transition-colors"
+                className="rounded-xl bg-[#0A1F3D] px-5 py-2.5 font-semibold text-white shadow-md transition-colors hover:bg-[#0F2A4D]"
               >
                 Ya, Teruskan
               </button>

@@ -19,6 +19,7 @@ class AdminController extends Controller
     public function inbox(Request $request)
     {
         $suggestions = Suggestion::with('user:id,name')
+            ->whereNotIn('status', ['Draft', 'draft', 'Draf']) // <-- TAMBAH BARIS INI UNTUK TAPIS OUT DRAF
             ->orderBy('created_at', 'desc')
             ->get();
 

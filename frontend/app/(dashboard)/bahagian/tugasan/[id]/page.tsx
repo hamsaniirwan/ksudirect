@@ -107,17 +107,32 @@ export default function KemasKiniTindakan() {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-slate-500">Memuatkan data...</div>;
+  if (loading) return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center font-body">
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+        .font-display { font-family: "Fraunces", ui-serif, Georgia, serif; font-optical-sizing: auto; }
+        .font-body { font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; }
+      `}</style>
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#0A1F3D] border-t-transparent shadow-sm"></div>
+      <p className="mt-4 text-sm font-medium text-[#64748B]">Memuatkan data...</p>
+    </div>
+  );
 
   if (errorMsg && !data) return (
-    <div className="p-8 mx-auto">
-      <div className="bg-red-50 border border-red-200 text-red-600 p-6 rounded-xl shadow-sm text-center">
-        <svg className="w-12 h-12 mx-auto mb-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="p-8 mx-auto font-body">
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+        .font-display { font-family: "Fraunces", ui-serif, Georgia, serif; font-optical-sizing: auto; }
+        .font-body { font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; }
+      `}</style>
+      <div className="bg-[#FEF3F2] border border-[#FDA29B] text-[#B42318] p-6 rounded-xl shadow-sm text-center">
+        <svg className="w-12 h-12 mx-auto mb-4 text-[#F1938A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
-        <h3 className="text-lg font-bold mb-2">Akses Dihalang</h3>
+        <h3 className="font-display text-lg font-semibold mb-2">Akses Dihalang</h3>
         <p className="mb-4">{errorMsg}</p>
-        <button onClick={() => router.push("/")} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+        <button onClick={() => router.push("/")} className="bg-[#B42318] text-white px-4 py-2 rounded-lg hover:bg-[#96190F] font-semibold transition-colors">
           Kembali ke Log Masuk
         </button>
       </div>
@@ -129,27 +144,38 @@ export default function KemasKiniTindakan() {
   const isClosed = data.task.status === "Ditutup" || data.task.status === "Selesai" || data.task.status === "Dikembalikan";
 
   return (
-    <div className="p-6 md:p-8 mx-auto flex flex-col lg:flex-row gap-8 relative">
+    <div className="p-6 md:p-8 mx-auto flex flex-col lg:flex-row gap-8 relative bg-[#F2EEE4]/40 min-h-screen font-body">
+      {/* Google Fonts: institutional serif for headings, technical sans for UI */}
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+        .font-display {
+          font-family: "Fraunces", ui-serif, Georgia, serif;
+          font-optical-sizing: auto;
+        }
+        .font-body {
+          font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+        }
+      `}</style>
       
       {/* Bahagian Kiri */}
       <div className="flex-1">
-        <Link href="/bahagian/tugasan" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#003B73] mb-6">
+        <Link href="/bahagian/tugasan" className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#0A1F3D] mb-6 transition-colors">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           Kembali ke Senarai
         </Link>
         
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6">
-          <span className="text-xs font-bold text-[#003B73] bg-blue-50 px-3 py-1 rounded-full mb-3 inline-block">
+        <div className="bg-white p-6 rounded-2xl border border-[#E5E0D3] shadow-sm mb-6">
+          <span className="text-xs font-bold text-[#0A1F3D] bg-[#EAF0F8] px-3 py-1 rounded-full mb-3 inline-block">
             {data.task.reference_no}
           </span>
-          <h1 className="text-2xl font-bold text-slate-800 mb-4">{data.task.title}</h1>
-          <p className="text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-100">
+          <h1 className="font-display text-2xl font-semibold text-[#0A1F3D] mb-4">{data.task.title}</h1>
+          <p className="text-[#1F2937] whitespace-pre-wrap leading-relaxed bg-[#F2EEE4] p-4 rounded-lg border border-[#E5E0D3]">
             {data.task.description}
           </p>
           
           {data.task.attachment && (
             <div className="mt-4">
-              <a href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/storage/${data.task.attachment}`} target="_blank" className="inline-flex items-center gap-2 text-sm text-[#003B73] font-semibold hover:underline">
+              <a href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/storage/${data.task.attachment}`} target="_blank" className="inline-flex items-center gap-2 text-sm text-[#0A1F3D] font-semibold hover:underline">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
                 Lihat Lampiran Dokumen
               </a>
@@ -158,16 +184,16 @@ export default function KemasKiniTindakan() {
         </div>
 
         {/* Jejak Audit */}
-        <h3 className="font-bold text-slate-800 mb-4">Sejarah Tindakan</h3>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <h3 className="font-display font-semibold text-[#0A1F3D] mb-4">Sejarah Tindakan</h3>
+        <div className="bg-white p-6 rounded-2xl border border-[#E5E0D3] shadow-sm space-y-4">
           {data.audit_trails.map((trail: any) => (
-            <div key={trail.id} className="border-l-2 border-blue-200 pl-4 py-1">
-              <p className="text-sm font-semibold text-slate-800">{trail.action}</p>
-              <p className="text-xs text-slate-500 mb-1">
+            <div key={trail.id} className="border-l-2 border-[#C6A15B]/50 pl-4 py-1">
+              <p className="text-sm font-semibold text-[#1F2937]">{trail.action}</p>
+              <p className="text-xs text-[#94A3B8] mb-1">
                 Oleh: {trail.user?.name} | {new Date(trail.created_at).toLocaleString('ms-MY')}
               </p>
               {trail.remarks && (
-                <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
+                <div className="mt-2 text-sm text-[#64748B] bg-[#F2EEE4] p-3 rounded-lg border border-[#E5E0D3] italic">
                   "{trail.remarks}"
                 </div>
               )}
@@ -178,25 +204,25 @@ export default function KemasKiniTindakan() {
 
       {/* Bahagian Kanan */}
       <div className="lg:w-1/3">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm sticky top-6">
-          <h3 className="font-bold text-slate-800 mb-4 text-lg border-b border-slate-100 pb-3">Kemas Kini Status</h3>
+        <div className="bg-white p-6 rounded-2xl border border-[#E5E0D3] shadow-sm sticky top-6">
+          <h3 className="font-display font-semibold text-[#0A1F3D] mb-4 text-lg border-b border-[#E5E0D3] pb-3">Kemas Kini Status</h3>
           
           {errorMsg && (
-            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-200">
+            <div className="mb-4 rounded-lg bg-[#FEF3F2] p-3 text-sm text-[#B42318] border border-[#FDA29B]">
               {errorMsg}
             </div>
           )}
 
           {data.task.status === "Semak Semula" && (
-            <div className="mb-5 bg-red-50 border border-red-200 p-4 rounded-xl text-sm text-red-700 shadow-sm">
-              <strong className="block mb-1 text-red-800">Perhatian!</strong>
+            <div className="mb-5 bg-[#FEF3F2] border border-[#FDA29B] p-4 rounded-xl text-sm text-[#96190F] shadow-sm">
+              <strong className="block mb-1 text-[#B42318]">Perhatian!</strong>
               Fail ini telah dibuka semula oleh Pejabat KSU. Sila rujuk sejarah tindakan untuk membaca ulasan KSU dan ambil tindakan pembetulan segera.
             </div>
           )}
 
           {isClosed ? (
-            <div className={`p-5 rounded-xl border text-sm font-medium text-center shadow-sm ${data.task.status === 'Dikembalikan' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-              <div className={`mx-auto w-10 h-10 rounded-full flex items-center justify-center mb-3 ${data.task.status === 'Dikembalikan' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+            <div className={`p-5 rounded-xl border text-sm font-medium text-center shadow-sm ${data.task.status === 'Dikembalikan' ? 'bg-[#FBF3E3] text-[#8A6A22] border-[#E5D3A8]' : 'bg-[#EAF6EF] text-[#0F6B41] border-[#CDE9DA]'}`}>
+              <div className={`mx-auto w-10 h-10 rounded-full flex items-center justify-center mb-3 ${data.task.status === 'Dikembalikan' ? 'bg-[#F0E2C4] text-[#8A6A22]' : 'bg-[#D9EFE3] text-[#0F6B41]'}`}>
                 {data.task.status === 'Dikembalikan' ? (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
                 ) : (
@@ -209,9 +235,9 @@ export default function KemasKiniTindakan() {
           ) : (
             <form onSubmit={handleTriggerSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Pilih Status Baharu</label>
+                <label className="block text-sm font-semibold text-[#1F2937] mb-2">Pilih Status Baharu</label>
                 <select 
-                  className="w-full border border-slate-300 p-3 rounded-lg focus:ring-1 focus:ring-[#003B73] focus:border-[#003B73] outline-none text-slate-800 bg-white"
+                  className="w-full border border-[#DDD7C7] p-3 rounded-lg focus:ring-1 focus:ring-[#0A1F3D] focus:border-[#0A1F3D] outline-none text-[#1F2937] bg-white"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
@@ -224,9 +250,9 @@ export default function KemasKiniTindakan() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Ulasan Tindakan <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-semibold text-[#1F2937] mb-2">Ulasan Tindakan <span className="text-[#B42318]">*</span></label>
                 <textarea 
-                  className="w-full border border-slate-300 p-3 rounded-lg focus:ring-1 focus:ring-[#003B73] focus:border-[#003B73] outline-none text-slate-800" 
+                  className="w-full border border-[#DDD7C7] p-3 rounded-lg focus:ring-1 focus:ring-[#0A1F3D] focus:border-[#0A1F3D] outline-none text-[#1F2937]" 
                   rows={4}
                   placeholder={status === "Dikembalikan" ? "Sila nyatakan sebab mengapa kes ini dikembalikan..." : "Terangkan tindakan yang telah/akan diambil..."}
                   value={remarks} 
@@ -240,7 +266,7 @@ export default function KemasKiniTindakan() {
               <button 
                 type="submit" 
                 disabled={submitLoading}
-                className={`w-full text-white font-semibold py-3 rounded-lg transition-colors shadow-md disabled:opacity-70 ${status === "Dikembalikan" ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#003B73] hover:bg-[#002f5c]'}`}
+                className={`w-full text-white font-semibold py-3 rounded-lg transition-colors shadow-md disabled:opacity-70 ${status === "Dikembalikan" ? 'bg-[#B08B3E] hover:bg-[#96742E]' : 'bg-[#0A1F3D] hover:bg-[#0F2A4D]'}`}
               >
                 {submitLoading ? "Menyimpan..." : (status === "Dikembalikan" ? "Pulangkan Tugasan" : "Simpan Tindakan")}
               </button>
@@ -252,35 +278,35 @@ export default function KemasKiniTindakan() {
       {/* Modal Pengesahan */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl text-center">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl text-center border border-[#E5E0D3]">
             
-            <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4 ${status === "Dikembalikan" ? 'bg-amber-100' : 'bg-blue-100'}`}>
-              <svg className={`h-6 w-6 ${status === "Dikembalikan" ? 'text-amber-600' : 'text-[#003B73]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4 ${status === "Dikembalikan" ? 'bg-[#F0E2C4]' : 'bg-[#EAF0F8]'}`}>
+              <svg className={`h-6 w-6 ${status === "Dikembalikan" ? 'text-[#8A6A22]' : 'text-[#0A1F3D]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
 
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Adakah anda pasti?</h3>
-            <p className="text-sm text-slate-500 mb-6">
+            <h3 className="font-display text-xl font-semibold text-[#0A1F3D] mb-2">Adakah anda pasti?</h3>
+            <p className="text-sm text-[#64748B] mb-6">
               Tindakan ini akan mengemas kini status fail cadangan dan merekodkan ulasan anda secara kekal.
               {status === "Selesai" && (
-                <span className="block mt-2 font-semibold text-emerald-600">Perhatian: Jika anda memilih "Selesai", rekod ini akan ditutup sepenuhnya.</span>
+                <span className="block mt-2 font-semibold text-[#0F6B41]">Perhatian: Jika anda memilih "Selesai", rekod ini akan ditutup sepenuhnya.</span>
               )}
               {status === "Dikembalikan" && (
-                <span className="block mt-2 font-semibold text-amber-600">Perhatian: Kes ini akan dikembalikan kepada Pejabat KSU dan dikeluarkan daripada senarai tugasan anda.</span>
+                <span className="block mt-2 font-semibold text-[#8A6A22]">Perhatian: Kes ini akan dikembalikan kepada Pejabat KSU dan dikeluarkan daripada senarai tugasan anda.</span>
               )}
             </p>
             
             <div className="flex justify-center gap-3">
               <button 
                 onClick={() => setShowConfirmModal(false)}
-                className="px-5 py-2.5 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-colors"
+                className="px-5 py-2.5 text-[#4B5563] font-semibold hover:bg-[#F2EEE4] rounded-xl transition-colors"
               >
                 Kembali
               </button>
               <button 
                 onClick={processSubmit}
-                className={`px-5 py-2.5 text-white font-semibold rounded-xl shadow-md transition-colors ${status === "Dikembalikan" ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#003B73] hover:bg-[#002f5c]'}`}
+                className={`px-5 py-2.5 text-white font-semibold rounded-xl shadow-md transition-colors ${status === "Dikembalikan" ? 'bg-[#B08B3E] hover:bg-[#96742E]' : 'bg-[#0A1F3D] hover:bg-[#0F2A4D]'}`}
               >
                 Ya, Simpan
               </button>

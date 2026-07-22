@@ -156,26 +156,38 @@ export default function PengurusanPengguna() {
 
   const getRoleBadge = (role: string) => {
     switch(role) {
-      case "admin": return <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold">Pentadbir</span>;
-      case "ksu": return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">KSU</span>;
-      case "special_officer": return <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">Pegawai Khas</span>;
-      case "division_head": return <span className="bg-blue-100 text-[#003B73] px-3 py-1 rounded-full text-xs font-bold">Ketua Bahagian</span>;
-      default: return <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">Pengguna Biasa</span>;
+      case "admin": return <span className="bg-[#0A1F3D] text-white px-3 py-1 rounded-full text-xs font-bold">Pentadbir</span>;
+      case "ksu": return <span className="bg-[#F5E6E6] text-[#7A2E2E] px-3 py-1 rounded-full text-xs font-bold border border-[#E8CFCF]">KSU</span>;
+      case "special_officer": return <span className="bg-[#FBF3E4] text-[#8A6A22] px-3 py-1 rounded-full text-xs font-bold border border-[#E5D3A8]">Pegawai Khas</span>;
+      case "division_head": return <span className="bg-[#EAF0F8] text-[#0A1F3D] px-3 py-1 rounded-full text-xs font-bold border border-[#D6E1EF]">Ketua Bahagian</span>;
+      default: return <span className="bg-[#F2EEE4] text-[#4B5563] px-3 py-1 rounded-full text-xs font-bold border border-[#E5E0D3]">Pengguna Biasa</span>;
     }
   };
 
   return (
-    <div className="p-6 md:p-8 mx-auto min-h-screen">
-      
+    <div className="p-6 md:p-8 mx-auto min-h-screen bg-[#F2EEE4]/40 font-body">
+      {/* Google Fonts: institutional serif for headings, technical sans for UI */}
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+        .font-display {
+          font-family: "Fraunces", ui-serif, Georgia, serif;
+          font-optical-sizing: auto;
+        }
+        .font-body {
+          font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+        }
+      `}</style>
+
       {/* HEADER */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800">Pengurusan Akses & Pengguna</h1>
-          <p className="mt-1 text-sm text-slate-500">Urus peranan pegawai dan tetapkan tahap akses sistem.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#B08B3E] mb-2">Tadbir Urus Sistem</p>
+          <h1 className="font-display text-2xl md:text-3xl font-semibold text-[#0A1F3D] tracking-tight">Pengurusan Akses & Pengguna</h1>
+          <p className="mt-2 text-sm text-[#64748B]">Urus peranan pegawai dan tetapkan tahap akses sistem.</p>
         </div>
         <button 
           onClick={openAddModal}
-          className="bg-[#003B73] text-white px-5 py-2.5 rounded-xl hover:bg-[#002f5c] transition-colors font-semibold shadow-md flex items-center gap-2"
+          className="bg-[#0A1F3D] text-white px-5 py-2.5 rounded-xl hover:bg-[#0F2A4D] transition-colors font-semibold shadow-md flex items-center gap-2 text-sm"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
           Tambah Pengguna
@@ -183,10 +195,10 @@ export default function PengurusanPengguna() {
       </div>
 
       {/* FILTER & TABLE */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div className="bg-white rounded-2xl border border-[#E5E0D3] shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-[#E5E0D3] flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="relative w-full md:w-96">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -194,40 +206,40 @@ export default function PengurusanPengguna() {
               placeholder="Cari nama atau e-mel pegawai..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:border-[#003B73] focus:ring-1 focus:ring-[#003B73] outline-none transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#DDD7C7] text-sm focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D] outline-none transition-colors"
             />
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+          <table className="w-full text-left text-sm text-[#475569]">
+            <thead className="bg-[#F7F5EF] text-[#64748B] font-semibold border-b border-[#E5E0D3]">
               <tr>
-                <th className="px-6 py-4">Nama Pegawai</th>
-                <th className="px-6 py-4">Peranan / Akses</th>
-                <th className="px-6 py-4">Jabatan / Bahagian</th>
-                <th className="px-6 py-4 text-right">Tindakan</th>
+                <th className="px-6 py-4 uppercase text-xs tracking-wider">Nama Pegawai</th>
+                <th className="px-6 py-4 uppercase text-xs tracking-wider">Peranan / Akses</th>
+                <th className="px-6 py-4 uppercase text-xs tracking-wider">Jabatan / Bahagian</th>
+                <th className="px-6 py-4 text-right uppercase text-xs tracking-wider">Tindakan</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E5E0D3]">
               {loading ? (
-                <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-400">Memuatkan data...</td></tr>
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-[#94A3B8]">Memuatkan data...</td></tr>
               ) : filteredUsers.length === 0 ? (
-                <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-400">Tiada pengguna dijumpai.</td></tr>
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-[#94A3B8]">Tiada pengguna dijumpai.</td></tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr key={user.id} className="hover:bg-[#F7F5EF]/60 transition-colors">
                     <td className="px-6 py-4">
-                      <p className="font-bold text-slate-800">{user.name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{user.email}</p>
+                      <p className="font-semibold text-[#0A1F3D]">{user.name}</p>
+                      <p className="text-xs text-[#94A3B8] mt-0.5">{user.email}</p>
                     </td>
                     <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
-                    <td className="px-6 py-4 text-slate-600 font-medium">
+                    <td className="px-6 py-4 text-[#64748B] font-medium">
                       {user.role === 'division_head' && user.division ? user.division.name : '-'}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button onClick={() => openEditModal(user)} className="text-blue-600 hover:text-blue-800 font-semibold mr-4 transition-colors">Edit</button>
-                      <button onClick={() => { setUserToDelete(user.id); setShowDeleteModal(true); }} className="text-red-600 hover:text-red-800 font-semibold transition-colors">Padam</button>
+                      <button onClick={() => openEditModal(user)} className="text-[#0A1F3D] hover:underline font-semibold mr-4 transition-colors">Edit</button>
+                      <button onClick={() => { setUserToDelete(user.id); setShowDeleteModal(true); }} className="text-[#B42318] hover:underline font-semibold transition-colors">Padam</button>
                     </td>
                   </tr>
                 ))
@@ -240,43 +252,43 @@ export default function PengurusanPengguna() {
       {/* MODAL TAMBAH/KEMASKINI */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="bg-white p-6 md:p-8 rounded-2xl w-full max-w-lg shadow-2xl animate-in zoom-in duration-200">
-            <h3 className="text-xl font-bold text-slate-800 mb-6">
+          <div className="bg-white p-6 md:p-8 rounded-2xl w-full max-w-lg shadow-2xl border border-[#E5E0D3] animate-in zoom-in duration-200">
+            <h3 className="font-display text-xl font-semibold text-[#0A1F3D] mb-6">
               {modalMode === 'add' ? 'Tambah Pengguna Baru' : 'Kemaskini Akses Pengguna'}
             </h3>
 
             {formError && (
-              <div className="mb-6 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-200">
+              <div className="mb-6 rounded-lg bg-[#FEF3F2] p-3 text-sm text-[#B42318] border border-[#FDA29B]">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Nama Penuh</label>
+                <label className="block text-sm font-semibold text-[#1F2937] mb-2">Nama Penuh</label>
                 <input 
                   type="text" required
                   value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:border-[#003B73] focus:ring-1 focus:ring-[#003B73]"
+                  className="w-full border border-[#DDD7C7] p-2.5 rounded-lg outline-none focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">E-mel Rasmi (SSO)</label>
+                <label className="block text-sm font-semibold text-[#1F2937] mb-2">E-mel Rasmi (SSO)</label>
                 <input 
                   type="email" required
                   disabled={modalMode === 'edit'} // Emel SSO tak digalakkan diubah setelah didaftar
                   value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className={`w-full border p-2.5 rounded-lg outline-none ${modalMode === 'edit' ? 'bg-slate-100 border-slate-200 text-slate-500' : 'border-slate-300 focus:border-[#003B73] focus:ring-1 focus:ring-[#003B73]'}`}
+                  className={`w-full border p-2.5 rounded-lg outline-none ${modalMode === 'edit' ? 'bg-[#F2EEE4] border-[#E5E0D3] text-[#94A3B8]' : 'border-[#DDD7C7] focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D]'}`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Peranan (Role)</label>
+                <label className="block text-sm font-semibold text-[#1F2937] mb-2">Peranan (Role)</label>
                 <select 
                   value={formData.role} 
                   onChange={(e) => setFormData({...formData, role: e.target.value, division_id: ""})}
-                  className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:border-[#003B73] focus:ring-1 focus:ring-[#003B73] bg-white"
+                  className="w-full border border-[#DDD7C7] p-2.5 rounded-lg outline-none focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D] bg-white"
                 >
                   <option value="user">Pengguna Biasa (Pegawai MOT)</option>
                   <option value="division_head">Ketua Bahagian</option>
@@ -288,11 +300,11 @@ export default function PengurusanPengguna() {
 
               {formData.role === "division_head" && (
                 <div className="animate-in fade-in slide-in-from-top-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Tugaskan ke Bahagian</label>
+                  <label className="block text-sm font-semibold text-[#1F2937] mb-2">Tugaskan ke Bahagian</label>
                   <select 
                     value={formData.division_id} 
                     onChange={(e) => setFormData({...formData, division_id: e.target.value})}
-                    className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:border-[#003B73] focus:ring-1 focus:ring-[#003B73] bg-white"
+                    className="w-full border border-[#DDD7C7] p-2.5 rounded-lg outline-none focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D] bg-white"
                   >
                     <option value="">-- Sila Pilih Bahagian --</option>
                     {divisions.map((div) => (
@@ -302,11 +314,11 @@ export default function PengurusanPengguna() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-slate-600 font-semibold bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#E5E0D3] mt-6">
+                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-[#4B5563] font-semibold bg-[#F2EEE4] hover:bg-[#EDE9DD] rounded-xl transition-colors">
                   Batal
                 </button>
-                <button type="submit" className="px-6 py-2.5 bg-[#003B73] text-white font-semibold rounded-xl hover:bg-[#002f5c] shadow-md transition-colors">
+                <button type="submit" className="px-6 py-2.5 bg-[#0A1F3D] text-white font-semibold rounded-xl hover:bg-[#0F2A4D] shadow-md transition-colors">
                   Simpan Maklumat
                 </button>
               </div>
@@ -318,19 +330,19 @@ export default function PengurusanPengguna() {
       {/* MODAL PADAM PENGGUNA */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl text-center animate-in zoom-in duration-200">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-50 mb-5">
-              <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl text-center border border-[#E5E0D3] animate-in zoom-in duration-200">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-[#FEF3F2] mb-5">
+              <svg className="h-8 w-8 text-[#B42318]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Padam Pengguna</h3>
-            <p className="text-sm text-slate-500 mb-8 leading-relaxed">
+            <h3 className="font-display text-xl font-semibold text-[#0A1F3D] mb-2">Padam Pengguna</h3>
+            <p className="text-sm text-[#64748B] mb-8 leading-relaxed">
               Adakah anda pasti? Tindakan ini akan membuang akses pengguna tersebut sepenuhnya dari sistem.
             </p>
             <div className="flex justify-center gap-3">
-              <button onClick={() => setShowDeleteModal(false)} className="px-5 py-2.5 text-slate-600 font-semibold bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Batal</button>
-              <button onClick={handleDelete} className="px-5 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 shadow-md transition-colors">Ya, Padam</button>
+              <button onClick={() => setShowDeleteModal(false)} className="px-5 py-2.5 text-[#4B5563] font-semibold bg-[#F2EEE4] hover:bg-[#EDE9DD] rounded-xl transition-colors">Batal</button>
+              <button onClick={handleDelete} className="px-5 py-2.5 bg-[#B42318] text-white font-semibold rounded-xl hover:bg-[#96190F] shadow-md transition-colors">Ya, Padam</button>
             </div>
           </div>
         </div>
