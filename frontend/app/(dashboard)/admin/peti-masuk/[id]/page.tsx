@@ -70,7 +70,14 @@ export default function PetiMasukDetail() {
       setModalError("Sila pilih Bahagian/Unit MOT terlebih dahulu.");
       return;
     }
-    // WAJIBKAN ulasan jika kes dibuka semula
+
+    // WAJIBKAN ulasan jika 'Tiada Tindakan Lanjut' (abaikan)
+    if (actionType === 'abaikan' && !remarks.trim()) {
+      setModalError("Sila masukkan ulasan/sebab mengapa tiada tindakan lanjut diambil.");
+      return;
+    }
+
+    // WAJIBKAN ulasan jika kes 'Buka Semula'
     if (actionType === 'buka_semula' && !remarks.trim()) {
       setModalError("Sila masukkan sebab/ulasan mengapa kes ini dibuka semula.");
       return;
@@ -92,7 +99,6 @@ export default function PetiMasukDetail() {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        // Hantar data ke backend
         body: JSON.stringify({ action: actionType, division_id: selectedDivision, remarks })
       });
       
@@ -138,11 +144,11 @@ export default function PetiMasukDetail() {
 
   if (!data) return null;
 
+  const isRemarkRequired = actionType === 'buka_semula' || actionType === 'abaikan';
+
   return (
-    // UBAH: Kurangkan padding di mobile (p-4) dan maintain p-8 di desktop
     <div className="p-4 md:p-8 mx-auto relative">
       
-      {/* UBAH: Jadikan flex-col di mobile supaya tak himpit, flex-row di desktop */}
       <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         
         <div className="flex items-center gap-3">
@@ -154,7 +160,6 @@ export default function PetiMasukDetail() {
         
         {/* BUTANG JIKA STATUS BELUM DITELITI */}
         {data.suggestion.status === "Belum Diteliti" && (
-          // UBAH: Butang jadi w-full di mobile supaya besar dan mudah ditekan
           <div className="flex flex-col sm:flex-row gap-3 mt-2 md:mt-0">
             <button 
               onClick={() => handleOpenModal("abaikan")}
@@ -186,7 +191,6 @@ export default function PetiMasukDetail() {
       </div>
 
       <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm mb-8">
-        {/* UBAH: Stack info di skrin sangat kecil (mobile) */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div>
             <p className="text-xs md:text-sm text-slate-500 mb-1">No. Rujukan</p>
@@ -242,7 +246,7 @@ export default function PetiMasukDetail() {
           <div className="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl">
             <h3 className="text-lg md:text-xl font-bold mb-4 text-slate-800">
               {actionType === 'panjangkan' ? 'Panjangkan Tindakan' : 
-               actionType === 'buka_semula' ? 'Buka Semula Kes' : 'Abaikan Cadangan'}
+               actionType === 'buka_semula' ? 'Buka Semula Kes' : 'Tiada Tindakan Lanjut'}
             </h3>
 
             {modalError && (
@@ -253,9 +257,11 @@ export default function PetiMasukDetail() {
             
             {actionType === 'panjangkan' && (
               <div className="mb-5">
-                <label className="block text-sm font-semibold mb-2 text-slate-700">Pilih Bahagian/Unit MOT</label>
+                <label className="block text-sm font-semibold mb-2 text-slate-700">
+                  Pilih Bahagian/Unit MOT <span className="text-red-500">*</span>
+                </label>
                 <select 
-                  className={`w-full border p-3 text-sm rounded-lg outline-none focus:ring-2 transition-colors bg-slate-50 ${modalError ? 'border-red-400 focus:ring-red-200 bg-red-50' : 'border-slate-200 focus:ring-blue-100 focus:border-[#003B73]'}`}
+                  className={`w-full border p-3 text-sm rounded-lg outline-none focus:ring-2 transition-colors bg-slate-50 ${modalError && !selectedDivision ? 'border-red-400 focus:ring-red-200 bg-red-50' : 'border-slate-200 focus:ring-blue-100 focus:border-[#003B73]'}`}
                   value={selectedDivision}
                   onChange={(e) => {
                     setSelectedDivision(e.target.value);
@@ -272,16 +278,20 @@ export default function PetiMasukDetail() {
 
             <div className="mb-6">
               <label className="block text-sm font-semibold mb-2 text-slate-700">
-                Ulasan {actionType === 'buka_semula' && <span className="text-red-500">*</span>}
+                Ulasan {isRemarkRequired && <span className="text-red-500">*</span>}
               </label>
               <textarea 
-                className={`w-full border p-3 text-sm rounded-lg outline-none focus:ring-2 transition-colors bg-slate-50 ${modalError && actionType === 'buka_semula' ? 'border-red-400 focus:ring-red-200 bg-red-50' : 'border-slate-200 focus:ring-blue-100 focus:border-[#003B73]'}`} 
+                className={`w-full border p-3 text-sm rounded-lg outline-none focus:ring-2 transition-colors bg-slate-50 ${modalError && isRemarkRequired && !remarks.trim() ? 'border-red-400 focus:ring-red-200 bg-red-50' : 'border-slate-200 focus:ring-blue-100 focus:border-[#003B73]'}`} 
                 rows={3}
                 value={remarks} onChange={(e) => {
                   setRemarks(e.target.value);
-                  if (e.target.value && actionType === 'buka_semula') setModalError("");
+                  if (e.target.value && isRemarkRequired) setModalError("");
                 }}
-                placeholder={actionType === 'buka_semula' ? 'Nyatakan sebab kes ini dipulangkan semula...' : 'Masukkan nota tambahan (Pilihan)...'}
+                placeholder={
+                  actionType === 'buka_semula' ? 'Nyatakan sebab kes ini dipulangkan semula...' :
+                  actionType === 'abaikan' ? 'Nyatakan sebab tiada tindakan lanjut diambil...' :
+                  'Masukkan nota tambahan (Pilihan)...'
+                }
               />
             </div>
 

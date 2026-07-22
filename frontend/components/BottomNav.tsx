@@ -29,7 +29,7 @@ export default function BottomNav() {
   // =========================================================
   const menuUtama = {
     name: "Utama",
-    path: "/dashboard", // <-- GANTI INI JIKA PATH PAPAN PEMUKA UTAMA PEGAWAI BERBEZA
+    path: "/dashboard", // Papan Pemuka Biasa (Untuk Pengguna/Bahagian)
     icon: <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
   };
 
@@ -53,7 +53,7 @@ export default function BottomNav() {
 
   const menuEksekutif = {
     name: "Eksekutif",
-    path: "/admin/papan-pemuka",
+    path: "/admin/papan-pemuka", // Dashboard Eksekutif
     icon: <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
   };
 
@@ -71,17 +71,16 @@ export default function BottomNav() {
   // 1. ADMIN / KSU / PEGAWAI KHAS
   if (role === "admin" || role === "ksu" || role === "special_officer" || role === "pegawai_khas") {
     navLinks = [
-      { ...menuUtama, path: "/dashboard" }, // Admin pergi ke dashboard admin
+      menuEksekutif, // Guna menu Eksekutif sebagai ganti menu Utama
       menuHantar, 
       menuSemak, 
-      menuEksekutif, 
       menuPetiMasuk
     ];
   } 
   // 2. KETUA BAHAGIAN
   else if (role === "division_head" || role === "bahagian") {
     navLinks = [
-      { ...menuUtama, path: "/dashboard" }, // Bahagian pergi ke senarai tugasan
+      menuUtama, 
       menuHantar, 
       menuSemak, 
       menuTugasan

@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\SuggestionController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\DivisionTaskController;
 use App\Http\Controllers\Api\AdminInboxController;
+// TAMBAH: Import UserController
+use App\Http\Controllers\Api\UserController;
+use App\Models\Division;
 
 // Laluan Terbuka (Public)
 Route::post('/login', [AuthController::class, 'login']);
@@ -25,7 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // --- PASTIKAN SEMUA ROUTE INI DUDUK DI DALAM BLOK MIDDLEWARE INI ---
 
-    // Route Modul Pengguna
+    // Route Modul Pengguna (Cadangan)
     Route::apiResource('suggestions', SuggestionController::class)->only(['index', 'store', 'show', 'update']);
 
     // Route Modul Admin
@@ -41,6 +44,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/tasks', [DivisionTaskController::class, 'index']);
         Route::get('/tasks/{id}', [DivisionTaskController::class, 'show']);
         Route::post('/tasks/{id}/status', [DivisionTaskController::class, 'updateStatus']);
+    });
+
+    // ==========================================
+    // TAMBAHAN BAHARU: Route Pengurusan Pengguna
+    // ==========================================
+    Route::apiResource('users', UserController::class);
+
+    // TAMBAHAN BAHARU: Route Senarai Bahagian (Untuk Dropdown Modal Pengguna)
+    Route::get('/divisions', function () {
+        return response()->json([
+            'status' => 'success',
+            'data' => Division::select('id', 'name')->get()
+        ]);
     });
 
 }); // <-- PENUTUP KUMPULAN SANCTUM BERADA DI BAWAH SEKALI

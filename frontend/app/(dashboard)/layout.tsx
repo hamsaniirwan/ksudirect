@@ -70,7 +70,7 @@ export default function DashboardLayout({
     if (userData) {
       const parsedData = JSON.parse(userData);
       setUserName(parsedData.name);
-      setUserRole(parsedData.role);
+      setUserRole(parsedData.role || "pengguna"); // Tambah fallback 'pengguna'
     }
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -96,15 +96,20 @@ export default function DashboardLayout({
 
   const roleDisplay: Record<string, string> = {
     user: "Pegawai MOT",
+    pengguna: "Pegawai MOT",
+    officer: "Pegawai MOT",
     special_officer: "Pegawai Khas KSU",
+    pegawai_khas: "Pegawai Khas KSU",
     ksu: "Ketua Setiausaha",
     division_head: "Ketua Bahagian",
+    bahagian: "Ketua Bahagian",
     admin: "Pentadbir Sistem",
   };
   const currentRole = roleDisplay[userRole] || "Pengguna";
 
-  const isAdminOrManagement = ["admin", "ksu", "special_officer"].includes(userRole);
-  const isDivisionHead = userRole === "division_head";
+  // Kemaskini senarai semakan role supaya menepati format baru
+  const isAdminOrManagement = ["admin", "ksu", "special_officer", "pegawai_khas"].includes(userRole);
+  const isDivisionHead = ["division_head", "bahagian"].includes(userRole);
 
   return (
     <div className="flex h-screen w-full bg-slate-50 font-sans overflow-hidden">
@@ -138,20 +143,42 @@ export default function DashboardLayout({
 
         <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto">
           
-          <Link
-            href="/dashboard"
-            onClick={() => setIsSidebarOpen(false)}
-            className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-              pathname === "/dashboard"
-                ? "bg-[#002f5c] text-white shadow-inner"
-                : "text-blue-100 hover:bg-[#002f5c] hover:text-white"
-            }`}
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-            Papan Pemuka Utama
-          </Link>
+          {/* =========================================================
+              MENU UTAMA (PALING ATAS)
+              Jika Admin -> Papar Dashboard Eksekutif
+              Jika Bukan -> Papar Papan Pemuka Utama Biasa
+          ========================================================= */}
+          {!isAdminOrManagement ? (
+            <Link
+              href="/dashboard"
+              onClick={() => setIsSidebarOpen(false)}
+              className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                pathname === "/dashboard"
+                  ? "bg-[#002f5c] text-white shadow-inner"
+                  : "text-blue-100 hover:bg-[#002f5c] hover:text-white"
+              }`}
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              Papan Pemuka Utama
+            </Link>
+          ) : (
+            <Link
+              href="/admin/papan-pemuka" // <-- PATH DASHBOARD EKSEKUTIF
+              onClick={() => setIsSidebarOpen(false)}
+              className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                pathname.startsWith("/admin/dashboard") || pathname.startsWith("/admin/papan-pemuka")
+                  ? "bg-[#002f5c] text-white shadow-inner"
+                  : "text-blue-100 hover:bg-[#002f5c] hover:text-white"
+              }`}
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+              </svg>
+              Dashboard Eksekutif
+            </Link>
+          )}
 
           <div className="pt-4 pb-1">
             <p className="px-4 text-xs font-semibold text-blue-300 uppercase tracking-wider">
@@ -223,21 +250,6 @@ export default function DashboardLayout({
               </div>
 
               <Link
-                href="/admin/papan-pemuka"
-                onClick={() => setIsSidebarOpen(false)}
-                className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                  pathname.startsWith("/admin/papan-pemuka")
-                    ? "bg-[#002f5c] text-white shadow-inner"
-                    : "text-blue-100 hover:bg-[#002f5c] hover:text-white"
-                }`}
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                </svg>
-                Dashboard Eksekutif
-              </Link>
-
-              <Link
                 href="/admin/peti-masuk"
                 onClick={() => setIsSidebarOpen(false)}
                 className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
@@ -251,6 +263,24 @@ export default function DashboardLayout({
                 </svg>
                 Peti Masuk Semakan
               </Link>
+
+              {/* MENU PENGURUSAN PENGGUNA (HANYA UNTUK ADMIN) */}
+              {userRole === "admin" && (
+                <Link
+                  href="/admin/pengguna"
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                    pathname.startsWith("/admin/pengguna")
+                      ? "bg-[#002f5c] text-white shadow-inner"
+                      : "text-blue-100 hover:bg-[#002f5c] hover:text-white"
+                  }`}
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  Pengurusan Pengguna
+                </Link>
+              )}
             </>
           )}
 
@@ -372,12 +402,6 @@ export default function DashboardLayout({
               >
                 Log Masuk Semula
               </button>
-              {/* <button 
-                onClick={() => setShowIdleModal(false)}
-                className="w-full px-5 py-3 text-slate-500 font-semibold hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Kembali
-              </button> */}
             </div>
           </div>
         </div>
