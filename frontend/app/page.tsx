@@ -141,9 +141,9 @@ export default function Home() {
             Platform Rasmi Cadangan Penambahbaikan
           </h2>
           <p className="mt-5 font-body text-[15px] leading-relaxed text-[#B9C4D6]">
-            Ruang selamat untuk kakitangan kementerian menyalurkan cadangan,
+            Ruang untuk kakitangan kementerian menyalurkan cadangan,
             memantau status semasa, dan menyumbang ke arah penambahbaikan
-            perkhidmatan pengangkutan negara.
+            perkhidmatan Kementerian Pengangkutan Malaysia.
           </p>
         </div>
 
