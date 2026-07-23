@@ -142,18 +142,18 @@ export default function Dashboard() {
 
       {/* HEADER DASHBOARD */}
       <div className="mb-8 md:mb-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#B08B3E]">
-          Ruang Kerja
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-[#B08B3E]">
+          Ruang Kerja Utama
         </p>
-        <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight text-[#0A1F3D] md:text-3xl">
-          Papan Pemuka Utama
+        <h1 className="font-display text-3xl font-medium tracking-tight text-[#0A1F3D]">
+          {greeting}, {userName}
         </h1>
-        <p className="mt-3 text-sm text-[#64748B] md:text-base">
-          {greeting}, <span className="font-semibold text-[#1F2937]">{userName}</span>
-          <span className="ml-2 inline-block rounded-full border border-[#E5D3A8] bg-[#FBF3E3] px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-[#8A6A22]">
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#64748B] md:text-base">
+          <p>Papan pemuka pengurusan cadangan dan tugasan.</p>
+          <span className="inline-block rounded-full border border-[#E5D3A8] bg-[#FBF3E3] px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-[#8A6A22]">
             {currentRoleName}
           </span>
-        </p>
+        </div>
       </div>
 
       {/* =========================================
