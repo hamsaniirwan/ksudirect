@@ -12,10 +12,29 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("YBhg. Dato' / Datin");
   
+  // State untuk menyimpan ucapan sapaan
+  const [greeting, setGreeting] = useState("Selamat Datang");
+
   // State untuk Dropdown Tahun (Secara lalai, guna tahun semasa)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
   useEffect(() => {
+    // Fungsi untuk tentukan ucapan mengikut waktu
+    const determineGreeting = () => {
+      const currentHour = new Date().getHours();
+      
+      if (currentHour >= 0 && currentHour < 12) {
+        setGreeting("Selamat Pagi");
+      } else if (currentHour >= 12 && currentHour < 14) {
+        setGreeting("Selamat Tengah Hari");
+      } else if (currentHour >= 14 && currentHour < 19) {
+        setGreeting("Selamat Petang");
+      } else {
+        setGreeting("Selamat Malam");
+      }
+    };
+    determineGreeting();
+
     const userStr = localStorage.getItem("user");
     if (userStr) {
       try {
@@ -95,17 +114,13 @@ export default function AdminDashboard() {
             Papan Pemuka KSU Direct
           </p>
           <h1 className="font-display text-3xl font-medium text-[#0A1F3D] tracking-tight">
-            Selamat Datang, {userName}
+            {greeting}, {userName}
           </h1>
           <p className="mt-2 text-[#64748B] text-sm md:text-base">
             Ringkasan analitik dan status cadangan penambahbaikan setakat <span className="font-semibold text-[#1F2937]">{today}</span>.
           </p>
         </div>
         <div className="shrink-0 flex gap-3">
-           {/* <button onClick={() => window.print()} className="hidden md:inline-flex items-center gap-2 bg-white border border-[#DDD7C7] text-[#1F2937] px-5 py-2.5 rounded-xl hover:bg-[#F7F5EF] transition-all shadow-sm font-medium text-sm">
-             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-             Cetak Laporan
-           </button> */}
            <Link href="/admin/peti-masuk" className="inline-flex items-center gap-2 bg-[#0A1F3D] text-white px-5 py-2.5 rounded-xl hover:bg-[#0F2A4D] transition-all shadow-md hover:shadow-lg font-medium text-sm">
              Buka Peti Masuk
              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>

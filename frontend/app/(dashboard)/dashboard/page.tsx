@@ -22,10 +22,29 @@ export default function Dashboard() {
   const [userRole, setUserRole] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // State untuk menyimpan ucapan sapaan
+  const [greeting, setGreeting] = useState("Selamat Datang");
+
   // State untuk menyimpan data KPI dan Graf (nanti dipanggil dari API)
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
+    // Fungsi untuk tentukan ucapan mengikut waktu
+    const determineGreeting = () => {
+      const currentHour = new Date().getHours();
+      
+      if (currentHour >= 0 && currentHour < 12) {
+        setGreeting("Selamat Pagi");
+      } else if (currentHour >= 12 && currentHour < 14) {
+        setGreeting("Selamat Tengah Hari");
+      } else if (currentHour >= 14 && currentHour < 19) {
+        setGreeting("Selamat Petang");
+      } else {
+        setGreeting("Selamat Malam");
+      }
+    };
+    determineGreeting();
+
     // 1. Ambil data profil dari local storage
     const userData = localStorage.getItem("user");
     let currentRole = "";
@@ -130,7 +149,7 @@ export default function Dashboard() {
           Papan Pemuka Utama
         </h1>
         <p className="mt-3 text-sm text-[#64748B] md:text-base">
-          Selamat datang, <span className="font-semibold text-[#1F2937]">{userName}</span>
+          {greeting}, <span className="font-semibold text-[#1F2937]">{userName}</span>
           <span className="ml-2 inline-block rounded-full border border-[#E5D3A8] bg-[#FBF3E3] px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-[#8A6A22]">
             {currentRoleName}
           </span>
