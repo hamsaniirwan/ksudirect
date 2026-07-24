@@ -91,7 +91,7 @@ export default function SemakCadangan() {
       case "Telah Dipanjangkan ke Bahagian":
         return (
           <span className="inline-block rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
-            Telah Dipanjangkan
+            Telah Dipanjangkan ke Bahagian
           </span>
         );
       case "Dalam Tindakan":
@@ -193,7 +193,7 @@ export default function SemakCadangan() {
             <option value="">Semua Status</option>
             <option value="Draft">Draf</option>
             <option value="Baharu">Baharu</option>
-            <option value="Telah Dipanjangkan ke Bahagian">Telah Dipanjangkan</option>
+            <option value="Telah Dipanjangkan ke Bahagian">Telah Dipanjangkan ke Bahagian</option>
             <option value="Dalam Tindakan">Dalam Tindakan</option>
             <option value="Semak Semula">Semak Semula</option>
             <option value="Dikembalikan">Dikembalikan</option>

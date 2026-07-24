@@ -198,7 +198,7 @@ export default function PetiMasukBahagian() {
             <option value="">Semua Status</option>
             <option value="Draft">Draf</option>
             <option value="Baharu">Baharu</option>
-            <option value="Telah Dipanjangkan ke Bahagian">Telah Dipanjangkan</option>
+            <option value="Telah Dipanjangkan ke Bahagian">Telah Dipanjangkan ke Bahagian</option>
             <option value="Dalam Tindakan">Dalam Tindakan</option>
             <option value="Semak Semula">Semak Semula</option>
             <option value="Dikembalikan">Dikembalikan</option>
