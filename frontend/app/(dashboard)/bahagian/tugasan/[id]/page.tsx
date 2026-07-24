@@ -46,7 +46,16 @@ export default function KemasKiniTindakan() {
         
         if (res.ok && result.status === "success") {
           setData(result.data);
-          setStatus(result.data.task.status);
+          
+          // LOGIK BAHARU: 
+          // Jika status adalah 'Telah Dipanjangkan ke Bahagian', kita paksa dropdown 
+          // jadi kosong supaya ia tunjuk "Pilih Status..."
+          if (result.data.task.status === "Telah Dipanjangkan ke Bahagian") {
+            setStatus("");
+          } else {
+            setStatus(result.data.task.status);
+          }
+
         } else if (res.status === 401 || res.status === 403) {
           setErrorMsg("Akses ditolak. Pastikan anda log masuk sebagai Ketua Bahagian yang berdaftar.");
         } else {
@@ -64,20 +73,31 @@ export default function KemasKiniTindakan() {
 
   const handleTriggerSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // PENGHADANG 1: Sekat jika pengguna tak pilih apa-apa (Masih di "Pilih Status...")
+    if (!status || status === "") {
+      setErrorMsg("Sila pilih status baharu terlebih dahulu sebelum menyimpan.");
+      return;
+    }
+
+    // PENGHADANG 2: Sekat jika status masih "Semak Semula"
     if (status === "Semak Semula") {
       setErrorMsg("Sila tukar status kepada 'Dalam Tindakan' atau 'Selesai' sebelum menyimpan.");
       return;
     }
-    if (!remarks) {
-      setErrorMsg("Sila masukkan ulasan tindakan anda.");
-      return;
-    }
+    
+    // Buka modal tanpa semak remarks, kerana remarks diisi dalam modal
     setErrorMsg(""); 
+    setRemarks(""); // Kosongkan remarks setiap kali modal dibuka supaya fresh
     setShowConfirmModal(true); 
   };
 
   const processSubmit = async () => {
-    setShowConfirmModal(false); 
+    // Validasi keselamatan kedua di dalam proses
+    if (!remarks.trim()) {
+        return;
+    }
+
     setSubmitLoading(true);
     setErrorMsg("");
     
@@ -94,13 +114,16 @@ export default function KemasKiniTindakan() {
       });
 
       if (res.ok) {
+        setShowConfirmModal(false); 
         router.refresh();
         window.location.reload();
       } else {
         const result = await res.json();
+        setShowConfirmModal(false); 
         setErrorMsg(result.message || "Gagal menyimpan rekod.");
       }
     } catch (err) {
+      setShowConfirmModal(false); 
       setErrorMsg("Ralat sistem. Gagal menyimpan rekod.");
     } finally {
       setSubmitLoading(false);
@@ -141,11 +164,23 @@ export default function KemasKiniTindakan() {
 
   if (!data) return null;
 
-  const isClosed = data.task.status === "Ditutup" || data.task.status === "Selesai" || data.task.status === "Dikembalikan";
+  const isClosed = data.task.status === "Ditutup" || data.task.status === "Selesai" || data.task.status === "Dikembalikan" || data.task.status === "Tiada Tindakan Lanjut";
+
+  const statusStyles: Record<string, string> = {
+    "Draft": "border-slate-200 bg-slate-100 text-slate-600",
+    "Baharu": "border-blue-200 bg-blue-50 text-blue-700",
+    "Telah Dipanjangkan ke Bahagian": "border-indigo-200 bg-indigo-50 text-indigo-700",
+    "Dalam Tindakan": "border-[#E5D3A8] bg-[#FBF3E3] text-[#8A6A22]",
+    "Dikembalikan": "border-orange-200 bg-orange-50 text-orange-700",
+    "Semak Semula": "border-rose-200 bg-rose-50 text-rose-700",
+    "Selesai": "border-[#CDE9DA] bg-[#EAF6EF] text-[#0F6B41]",
+    "Tiada Tindakan Lanjut": "border-zinc-300 bg-zinc-100 text-zinc-700",
+  };
+
+  const currentStyle = statusStyles[data.task.status] || "border-slate-200 bg-slate-100 text-slate-600";
 
   return (
     <div className="p-6 md:p-8 mx-auto flex flex-col lg:flex-row gap-8 relative bg-[#F2EEE4]/40 min-h-screen font-body">
-      {/* Google Fonts: institutional serif for headings, technical sans for UI */}
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
         .font-display {
@@ -165,9 +200,15 @@ export default function KemasKiniTindakan() {
         </Link>
         
         <div className="bg-white p-6 rounded-2xl border border-[#E5E0D3] shadow-sm mb-6">
-          <span className="text-xs font-bold text-[#0A1F3D] bg-[#EAF0F8] px-3 py-1 rounded-full mb-3 inline-block">
-            {data.task.reference_no}
-          </span>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-[#0A1F3D] bg-[#EAF0F8] px-3 py-1 rounded-full inline-block">
+              {data.task.reference_no}
+            </span>
+            <span className={`inline-block rounded-full border px-3 py-1 text-xs font-bold shadow-sm ${currentStyle}`}>
+              {data.task.status}
+            </span>
+          </div>
+
           <h1 className="font-display text-2xl font-semibold text-[#0A1F3D] mb-4">{data.task.title}</h1>
           <p className="text-[#1F2937] whitespace-pre-wrap leading-relaxed bg-[#F2EEE4] p-4 rounded-lg border border-[#E5E0D3]">
             {data.task.description}
@@ -239,46 +280,34 @@ export default function KemasKiniTindakan() {
                 <select 
                   className="w-full border border-[#DDD7C7] p-3 rounded-lg focus:ring-1 focus:ring-[#0A1F3D] focus:border-[#0A1F3D] outline-none text-[#1F2937] bg-white"
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  {status === "Semak Semula" && <option value="Semak Semula" disabled>Semak Semula (Sila kemas kini ke status lain)</option>}
-                  <option value="Telah Dipanjangkan">Belum Diproses (Baharu)</option>
-                  <option value="Dalam Tindakan">Dalam Tindakan</option>
-                  <option value="Selesai">Selesai / Laporan Disiapkan</option>
-                  <option value="Dikembalikan">Dikembalikan (Bukan bidang kuasa)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[#1F2937] mb-2">Ulasan Tindakan <span className="text-[#B42318]">*</span></label>
-                <textarea 
-                  className="w-full border border-[#DDD7C7] p-3 rounded-lg focus:ring-1 focus:ring-[#0A1F3D] focus:border-[#0A1F3D] outline-none text-[#1F2937]" 
-                  rows={4}
-                  placeholder={status === "Dikembalikan" ? "Sila nyatakan sebab mengapa kes ini dikembalikan..." : "Terangkan tindakan yang telah/akan diambil..."}
-                  value={remarks} 
                   onChange={(e) => {
-                    setRemarks(e.target.value);
-                    if(e.target.value) setErrorMsg(""); 
+                    setStatus(e.target.value);
+                    if (e.target.value) setErrorMsg(""); // Padam error bila user pilih
                   }}
-                />
+                >
+                  <option value="" disabled>Pilih Status...</option>
+                  {data.task.status === "Semak Semula" && <option value="Semak Semula" disabled>Semak Semula (Sila kemas kini ke status lain)</option>}
+                  <option value="Dalam Tindakan">Dalam Tindakan</option>
+                  <option value="Selesai">Selesai</option>
+                  <option value="Dikembalikan">Dikembalikan</option>
+                </select>
               </div>
 
               <button 
                 type="submit" 
-                disabled={submitLoading}
-                className={`w-full text-white font-semibold py-3 rounded-lg transition-colors shadow-md disabled:opacity-70 ${status === "Dikembalikan" ? 'bg-[#B08B3E] hover:bg-[#96742E]' : 'bg-[#0A1F3D] hover:bg-[#0F2A4D]'}`}
+                className={`w-full text-white font-semibold py-3 rounded-lg transition-colors shadow-md ${status === "Dikembalikan" ? 'bg-[#B08B3E] hover:bg-[#96742E]' : 'bg-[#0A1F3D] hover:bg-[#0F2A4D]'}`}
               >
-                {submitLoading ? "Menyimpan..." : (status === "Dikembalikan" ? "Pulangkan Tugasan" : "Simpan Tindakan")}
+                {status === "Dikembalikan" ? "Pulangkan Tugasan" : "Simpan Tindakan"}
               </button>
             </form>
           )}
         </div>
       </div>
 
-      {/* Modal Pengesahan */}
+      {/* Modal Pengesahan & Ulasan */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl text-center border border-[#E5E0D3]">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-lg shadow-xl text-center border border-[#E5E0D3]">
             
             <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4 ${status === "Dikembalikan" ? 'bg-[#F0E2C4]' : 'bg-[#EAF0F8]'}`}>
               <svg className={`h-6 w-6 ${status === "Dikembalikan" ? 'text-[#8A6A22]' : 'text-[#0A1F3D]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -288,27 +317,42 @@ export default function KemasKiniTindakan() {
 
             <h3 className="font-display text-xl font-semibold text-[#0A1F3D] mb-2">Adakah anda pasti?</h3>
             <p className="text-sm text-[#64748B] mb-6">
-              Tindakan ini akan mengemas kini status fail cadangan dan merekodkan ulasan anda secara kekal.
+              Tindakan ini akan mengemas kini status fail ke <strong className="text-[#0A1F3D]">{status}</strong> dan merekodkan ulasan anda secara kekal.
               {status === "Selesai" && (
                 <span className="block mt-2 font-semibold text-[#0F6B41]">Perhatian: Jika anda memilih "Selesai", rekod ini akan ditutup sepenuhnya.</span>
               )}
               {status === "Dikembalikan" && (
-                <span className="block mt-2 font-semibold text-[#8A6A22]">Perhatian: Kes ini akan dikembalikan kepada Pejabat KSU dan dikeluarkan daripada senarai tugasan anda.</span>
+                <span className="block mt-2 font-semibold text-[#8A6A22]">Perhatian: Cadangan ini akan dikembalikan kepada Pejabat KSU dan dikeluarkan daripada senarai tugasan anda.</span>
               )}
             </p>
+
+            <div className="text-left mb-6">
+              <label className="block text-sm font-semibold text-[#1F2937] mb-2">
+                Ulasan Tindakan <span className="text-[#B42318]">*</span>
+              </label>
+              <textarea 
+                className="w-full border border-[#DDD7C7] p-3 rounded-lg focus:ring-1 focus:ring-[#0A1F3D] focus:border-[#0A1F3D] outline-none text-[#1F2937] text-sm" 
+                rows={4}
+                placeholder={status === "Dikembalikan" ? "Sila nyatakan sebab mengapa cadangan ini dikembalikan..." : "Terangkan tindakan yang telah/akan diambil..."}
+                value={remarks} 
+                onChange={(e) => setRemarks(e.target.value)}
+              />
+            </div>
             
             <div className="flex justify-center gap-3">
               <button 
                 onClick={() => setShowConfirmModal(false)}
                 className="px-5 py-2.5 text-[#4B5563] font-semibold hover:bg-[#F2EEE4] rounded-xl transition-colors"
+                disabled={submitLoading}
               >
-                Kembali
+                Batal
               </button>
               <button 
                 onClick={processSubmit}
-                className={`px-5 py-2.5 text-white font-semibold rounded-xl shadow-md transition-colors ${status === "Dikembalikan" ? 'bg-[#B08B3E] hover:bg-[#96742E]' : 'bg-[#0A1F3D] hover:bg-[#0F2A4D]'}`}
+                disabled={!remarks.trim() || submitLoading}
+                className={`px-5 py-2.5 text-white font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${status === "Dikembalikan" ? 'bg-[#B08B3E] hover:bg-[#96742E]' : 'bg-[#0A1F3D] hover:bg-[#0F2A4D]'}`}
               >
-                Ya, Simpan
+                {submitLoading ? "Menyimpan..." : "Ya, Simpan"}
               </button>
             </div>
           </div>

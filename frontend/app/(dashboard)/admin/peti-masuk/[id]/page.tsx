@@ -79,7 +79,7 @@ export default function PetiMasukDetail() {
 
     // WAJIBKAN ulasan jika kes 'Buka Semula'
     if (actionType === 'buka_semula' && !remarks.trim()) {
-      setModalError("Sila masukkan sebab/ulasan mengapa kes ini dibuka semula.");
+      setModalError("Sila masukkan sebab/ulasan mengapa cadangan ini dibuka semula.");
       return;
     }
     
@@ -161,6 +161,22 @@ export default function PetiMasukDetail() {
 
   const isRemarkRequired = actionType === 'buka_semula' || actionType === 'abaikan';
 
+  // ==========================================
+  // LANGKAH A: Objek Warna Status
+  // ==========================================
+  const statusStyles: Record<string, string> = {
+    "Draft": "border-slate-200 bg-slate-100 text-slate-600",
+    "Baharu": "border-blue-200 bg-blue-50 text-blue-700",
+    "Telah Dipanjangkan ke Bahagian": "border-indigo-200 bg-indigo-50 text-indigo-700",
+    "Dalam Tindakan": "border-[#E5D3A8] bg-[#FBF3E3] text-[#8A6A22]",
+    "Dikembalikan": "border-orange-200 bg-orange-50 text-orange-700",
+    "Semak Semula": "border-rose-200 bg-rose-50 text-rose-700",
+    "Selesai": "border-[#CDE9DA] bg-[#EAF6EF] text-[#0F6B41]",
+    "Tiada Tindakan Lanjut": "border-zinc-300 bg-zinc-100 text-zinc-700",
+  };
+
+  const currentStyle = statusStyles[data.suggestion.status] || "border-slate-200 bg-slate-100 text-slate-600";
+
   return (
     <div className="p-4 md:p-8 mx-auto relative font-body">
       {/* Google Fonts: institutional serif for headings, technical sans for UI */}
@@ -183,7 +199,7 @@ export default function PetiMasukDetail() {
         </div>
         
         {/* BUTANG JIKA STATUS BELUM DITELITI */}
-        {data.suggestion.status === "Belum Diteliti" && (
+        {data.suggestion.status === "Baharu" && (
           <div className="flex flex-col sm:flex-row gap-3 mt-2 md:mt-0">
             <button 
               onClick={() => handleOpenModal("abaikan")}
@@ -220,11 +236,12 @@ export default function PetiMasukDetail() {
             <p className="text-xs md:text-sm text-[#64748B] mb-1">No. Rujukan</p>
             <p className="font-display text-base md:text-lg font-semibold text-[#0A1F3D]">{data.suggestion.reference_no}</p>
           </div>
+          {/* LANGKAH B: Paparan Lencana Status */}
           <div className="sm:text-right">
             <p className="text-xs md:text-sm text-[#64748B] mb-1">Status Semasa</p>
-            <p className={`font-semibold text-sm md:text-base ${data.suggestion.status === 'Semak Semula' ? 'text-[#B42318]' : 'text-[#0A1F3D]'}`}>
+            <span className={`inline-block rounded-full border px-4 py-1.5 text-xs font-bold md:py-1 md:text-sm shadow-sm ${currentStyle}`}>
               {data.suggestion.status}
-            </p>
+            </span>
           </div>
         </div>
         
@@ -312,7 +329,7 @@ export default function PetiMasukDetail() {
                   if (e.target.value && isRemarkRequired) setModalError("");
                 }}
                 placeholder={
-                  actionType === 'buka_semula' ? 'Nyatakan sebab kes ini dipulangkan semula...' :
+                  actionType === 'buka_semula' ? 'Nyatakan sebab cadangan ini dipulangkan semula...' :
                   actionType === 'abaikan' ? 'Nyatakan sebab tiada tindakan lanjut diambil...' :
                   'Masukkan nota tambahan (Pilihan)...'
                 }

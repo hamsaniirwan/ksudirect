@@ -40,7 +40,9 @@ class SuggestionController extends Controller
 
         $data = $request->only(['category', 'title', 'description']);
         $data['user_id'] = $request->user()->id;
-        $data['status'] = $request->is_draft ? 'Draft' : 'Belum Diteliti';
+        
+        // TUKAR DI SINI: Belum Diteliti -> Baharu
+        $data['status'] = $request->is_draft ? 'Draft' : 'Baharu';
 
         // Jana Nombor Rujukan jika dihantar (Bukan draf)
         if (!$request->is_draft) {
@@ -67,7 +69,7 @@ class SuggestionController extends Controller
 
         $suggestion = Suggestion::create($data);
 
-        // Modul 5: Trigger Email Event di sini jika status = 'Belum Diteliti'
+        // Modul 5: Trigger Email Event di sini jika status = 'Baharu'
         if (!$request->is_draft) {
             // 1. Emel kepada Penghantar (Submitter)
             $submitterSubject = "KSU Direct - Status Penghantaran";
@@ -121,7 +123,7 @@ class SuggestionController extends Controller
         $suggestion = Suggestion::where('user_id', $request->user()->id)->findOrFail($id);
 
         // Halang kemaskini JIKA status dah Selesai/Ditutup
-        if (in_array($suggestion->status, ['Selesai', 'Ditutup', 'Tiada Keperluan Tindakan Lanjut'])) {
+        if (in_array($suggestion->status, ['Selesai', 'Ditutup', 'Tiada Tindakan Lanjut', 'Tiada Keperluan Tindakan Lanjut'])) {
             return response()->json([
                 'status' => 'error', 
                 'message' => 'Cadangan yang telah selesai atau ditutup tidak boleh dikemaskini.'
@@ -151,7 +153,8 @@ class SuggestionController extends Controller
 
         // Jika asalnya draf dan butang "Hantar" ditekan
         if (!$isAlreadySubmitted && !$request->is_draft) {
-            $suggestion->status = 'Belum Diteliti';
+            // TUKAR DI SINI: Belum Diteliti -> Baharu
+            $suggestion->status = 'Baharu';
             $suggestion->reference_no = $this->generateReferenceNumber();
         }
 

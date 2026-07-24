@@ -85,19 +85,61 @@ export default function PetiMasukBahagian() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Telah Dipanjangkan": 
-        return <span className="rounded-full bg-[#EAF0F8] px-3 py-1 text-xs font-semibold text-[#0A1F3D] border border-[#D6E1EF]">Baharu</span>;
-      case "Dalam Tindakan": 
-        return <span className="rounded-full bg-[#FBF3E3] px-3 py-1 text-xs font-semibold text-[#8A6A22] border border-[#E5D3A8]">Dalam Tindakan</span>;
-      case "Semak Semula": 
-        return <span className="rounded-full bg-[#FEF3F2] px-3 py-1 text-xs font-semibold text-[#B42318] border border-[#FDA29B] animate-pulse">Semak Semula</span>;
-      case "Dikembalikan": 
-        return <span className="rounded-full bg-[#EDE9DD] px-3 py-1 text-xs font-semibold text-[#6B7280] border border-[#DDD7C7]">Dikembalikan</span>;
-      case "Selesai": 
-      case "Ditutup":
-        return <span className="rounded-full bg-[#EAF6EF] px-3 py-1 text-xs font-semibold text-[#0F6B41] border border-[#CDE9DA]">{status}</span>;
-      default: 
-        return <span className="rounded-full bg-[#F2EEE4] px-3 py-1 text-xs font-semibold text-[#4B5563] border border-[#E5E0D3]">{status}</span>;
+      case "Draft":
+      case "Draf":
+        return (
+          <span className="inline-block rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+            Draf
+          </span>
+        );
+      case "Baharu":
+        return (
+          <span className="inline-block rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 shadow-sm">
+            Baharu
+          </span>
+        );
+      case "Telah Dipanjangkan ke Bahagian":
+        return (
+          <span className="inline-block rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
+            Telah Dipanjangkan ke Bahagian
+          </span>
+        );
+      case "Dalam Tindakan":
+        return (
+          <span className="inline-block rounded-full border border-[#E5D3A8] bg-[#FBF3E3] px-3 py-1 text-xs font-bold text-[#8A6A22] shadow-sm">
+            Dalam Tindakan
+          </span>
+        );
+      case "Dikembalikan":
+        return (
+          <span className="inline-block rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700 shadow-sm">
+            Dikembalikan
+          </span>
+        );
+      case "Semak Semula":
+        return (
+          <span className="inline-block rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 shadow-sm animate-pulse">
+            Semak Semula
+          </span>
+        );
+      case "Selesai":
+        return (
+          <span className="inline-block rounded-full border border-[#CDE9DA] bg-[#EAF6EF] px-3 py-1 text-xs font-bold text-[#0F6B41] shadow-sm">
+            Selesai
+          </span>
+        );
+      case "Tiada Tindakan Lanjut":
+        return (
+          <span className="inline-block rounded-full border border-zinc-300 bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 shadow-sm">
+            Tiada Tindakan Lanjut
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-block rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+            {status}
+          </span>
+        );
     }
   };
 
@@ -128,9 +170,14 @@ export default function PetiMasukBahagian() {
       )}
 
       {/* Bahagian Filter & Search */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl border border-[#E5E0D3] shadow-sm">
-        <div className="flex-1 relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="mb-6 flex flex-col gap-4 rounded-xl border border-[#E5E0D3] bg-white p-4 shadow-sm md:flex-row">
+        <div className="relative flex-1">
+          <svg
+            className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -138,23 +185,25 @@ export default function PetiMasukBahagian() {
             placeholder="Cari tajuk atau no. rujukan..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#DDD7C7] text-sm focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D] outline-none transition-colors"
+            className="w-full rounded-lg border border-[#DDD7C7] py-2.5 pl-10 pr-4 text-sm outline-none transition-colors focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D]"
           />
         </div>
-        
-        <div className="md:w-64 shrink-0">
+
+        <div className="shrink-0 md:w-64">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg border border-[#DDD7C7] text-sm focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D] outline-none transition-colors bg-white"
+            className="w-full rounded-lg border border-[#DDD7C7] bg-white py-2.5 pl-4 pr-10 text-sm outline-none transition-colors focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D]"
           >
             <option value="">Semua Status</option>
-            <option value="Telah Dipanjangkan">Baharu (Telah Dipanjangkan)</option>
-            <option value="Semak Semula">Semak Semula (Pemulangan KSU)</option>
+            <option value="Draft">Draf</option>
+            <option value="Baharu">Baharu</option>
+            <option value="Telah Dipanjangkan ke Bahagian">Telah Dipanjangkan</option>
             <option value="Dalam Tindakan">Dalam Tindakan</option>
-            <option value="Selesai">Selesai</option>
+            <option value="Semak Semula">Semak Semula</option>
             <option value="Dikembalikan">Dikembalikan</option>
-            <option value="Ditutup">Ditutup</option>
+            <option value="Selesai">Selesai</option>
+            <option value="Tiada Tindakan Lanjut">Tiada Tindakan Lanjut</option>
           </select>
         </div>
       </div>

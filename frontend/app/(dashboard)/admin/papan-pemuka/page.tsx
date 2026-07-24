@@ -51,17 +51,44 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       setLoading(true);
       const token = localStorage.getItem("token");
+
+      // JIKA TIADA TOKEN, TERUS TENDANG KE HALAMAN LOGIN
+      if (!token) {
+        window.location.href = '/';
+        return;
+      }
+
       try {
         // Hantar tahun yang dipilih sebagai query parameter ke Laravel
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard?year=${selectedYear}`, {
-          headers: { "Authorization": `Bearer ${token}` }
+          headers: { 
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/json" // <-- WAJIB ADA SUPAYA LARAVEL TAK HANTAR HTML
+          }
         });
+
+        // SEMAKAN KESELAMATAN: Pastikan response adalah JSON
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.error("Sesi luput atau ralat pelayan. Melog keluar...");
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = '/'; 
+            return;
+        }
+
         const result = await res.json();
-        if (result.status === "success") {
+        
+        if (res.ok && result.status === "success") {
           setData(result.data);
+        } else if (res.status === 401) {
+          // Token dah tak wujud dalam DB (sebab migrate:fresh)
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = '/'; 
         }
       } catch (err) {
-        console.error(err);
+        console.error("Ralat memuat turun data:", err);
       } finally {
         setLoading(false);
       }
@@ -178,7 +205,7 @@ export default function AdminDashboard() {
         <div className="bg-white p-6 md:p-8 rounded-2xl border border-[#E5E0D3] shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-full h-1 bg-[#C6A15B]"></div>
           <div className="flex items-start justify-between mb-6">
-            <p className="text-sm font-semibold text-[#64748B] uppercase tracking-[0.2em] mt-1">Belum Diteliti</p>
+            <p className="text-sm font-semibold text-[#64748B] uppercase tracking-[0.2em] mt-1">Baharu</p>
             <div className="p-2.5 bg-[#FBF3E4] text-[#B08B3E] rounded-xl group-hover:bg-[#C6A15B] group-hover:text-white transition-colors duration-300">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
@@ -200,7 +227,7 @@ export default function AdminDashboard() {
         <div className="bg-white p-6 md:p-8 rounded-2xl border border-[#E5E0D3] shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-full h-1 bg-[#0F6D48]"></div>
           <div className="flex items-start justify-between mb-6">
-            <p className="text-sm font-semibold text-[#64748B] uppercase tracking-[0.2em] mt-1">Selesai / Ditutup</p>
+            <p className="text-sm font-semibold text-[#64748B] uppercase tracking-[0.2em] mt-1">Selesai/Ditutup</p>
             <div className="p-2.5 bg-[#E8F5EE] text-[#0F6D48] rounded-xl group-hover:bg-[#0F6D48] group-hover:text-white transition-colors duration-300">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
             </div>
@@ -235,7 +262,6 @@ export default function AdminDashboard() {
             >
               <option value={new Date().getFullYear().toString()}>Tahun {new Date().getFullYear()}</option>
               <option value={(new Date().getFullYear() - 1).toString()}>Tahun {new Date().getFullYear() - 1}</option>
-              <option value={(new Date().getFullYear() - 2).toString()}>Tahun {new Date().getFullYear() - 2}</option>
             </select>
           </div>
           
@@ -249,10 +275,20 @@ export default function AdminDashboard() {
                   cursor={{fill: '#F7F5EF'}} 
                   contentStyle={{borderRadius: '12px', border: '1px solid #E5E0D3', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontFamily: 'IBM Plex Sans'}}
                 />
-                <Legend iconType="circle" wrapperStyle={{fontSize: '12px', paddingTop: '20px', fontFamily: 'IBM Plex Sans'}} />
-                <Bar dataKey="pending" name="Belum Diteliti" stackId="a" fill="#C6A15B" maxBarSize={40} />
-                <Bar dataKey="forwarded" name="Dipanjangkan" stackId="a" fill="#375374" maxBarSize={40} />
-                <Bar dataKey="completed" name="Selesai/Ditutup" stackId="a" fill="#0F6D48" maxBarSize={40} radius={[4, 4, 0, 0]} />
+                
+                <Legend iconType="circle" wrapperStyle={{fontSize: '11px', paddingTop: '20px', fontFamily: 'IBM Plex Sans'}} />
+                
+                {/* 
+                  Warna telah ditala semula untuk harmoni korporat.
+                  Susunan stack (Tingkat) bermula dari Baharu (bawah) -> Tiada Tindakan (Atas)
+                */}
+                <Bar dataKey="baharu" name="Baharu" stackId="a" fill="#1D4ED8" maxBarSize={40} />           {/* Blue 700 */}
+                <Bar dataKey="dipanjangkan" name="Dipanjangkan" stackId="a" fill="#4338CA" maxBarSize={40} /> {/* Indigo 700 */}
+                <Bar dataKey="dalam_tindakan" name="Dalam Tindakan" stackId="a" fill="#B08B3E" maxBarSize={40} /> {/* Gold MOT */}
+                <Bar dataKey="semak_semula" name="Semak Semula" stackId="a" fill="#E11D48" maxBarSize={40} />   {/* Rose 600 */}
+                <Bar dataKey="dikembalikan" name="Dikembalikan" stackId="a" fill="#F97316" maxBarSize={40} />   {/* Orange 500 */}
+                <Bar dataKey="selesai" name="Selesai" stackId="a" fill="#0F6D48" maxBarSize={40} />             {/* Emerald Green */}
+                <Bar dataKey="tiada_tindakan" name="Tiada Tindakan Lanjut" stackId="a" fill="#71717A" maxBarSize={40} radius={[4, 4, 0, 0]} /> {/* Zinc 500 */}
               </BarChart>
             </ResponsiveContainer>
           </div>

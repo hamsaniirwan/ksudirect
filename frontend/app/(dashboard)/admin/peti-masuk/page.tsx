@@ -130,21 +130,61 @@ export default function AdminInbox() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Draft": 
-        return <span className="rounded-full border border-[#E5E0D3] bg-[#F2EEE4] px-3 py-1 text-xs font-semibold text-[#4B5563]">Draf</span>;
-      case "Belum Diteliti": 
-        return <span className="rounded-full border border-[#E5D3A8] bg-[#FBF3E3] px-3 py-1 text-xs font-semibold text-[#8A6A22]">Belum Diteliti</span>;
-      case "Telah Dipanjangkan": 
-        return <span className="rounded-full border border-[#D6E1EF] bg-[#EAF0F8] px-3 py-1 text-xs font-semibold text-[#0A1F3D]">Dipanjangkan</span>;
-      case "Semak Semula": 
-        return <span className="rounded-full border border-[#FDA29B] bg-[#FEF3F2] px-3 py-1 text-xs font-semibold text-[#B42318]">Semak Semula</span>;
-      case "Dikembalikan": 
-        return <span className="rounded-full border border-[#DDD7C7] bg-[#EDE9DD] px-3 py-1 text-xs font-semibold text-[#6B7280]">Dikembalikan</span>;
-      case "Selesai": 
-      case "Ditutup":
-        return <span className="rounded-full border border-[#CDE9DA] bg-[#EAF6EF] px-3 py-1 text-xs font-semibold text-[#0F6B41]">{status}</span>;
-      default: 
-        return <span className="rounded-full border border-[#E5E0D3] bg-[#F2EEE4] px-3 py-1 text-xs font-semibold text-[#4B5563]">{status}</span>;
+      case "Draft":
+      case "Draf":
+        return (
+          <span className="inline-block rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+            Draf
+          </span>
+        );
+      case "Baharu":
+        return (
+          <span className="inline-block rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 shadow-sm">
+            Baharu
+          </span>
+        );
+      case "Telah Dipanjangkan ke Bahagian":
+        return (
+          <span className="inline-block rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
+            Telah Dipanjangkan
+          </span>
+        );
+      case "Dalam Tindakan":
+        return (
+          <span className="inline-block rounded-full border border-[#E5D3A8] bg-[#FBF3E3] px-3 py-1 text-xs font-bold text-[#8A6A22] shadow-sm">
+            Dalam Tindakan
+          </span>
+        );
+      case "Dikembalikan":
+        return (
+          <span className="inline-block rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700 shadow-sm">
+            Dikembalikan
+          </span>
+        );
+      case "Semak Semula":
+        return (
+          <span className="inline-block rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 shadow-sm animate-pulse">
+            Semak Semula
+          </span>
+        );
+      case "Selesai":
+        return (
+          <span className="inline-block rounded-full border border-[#CDE9DA] bg-[#EAF6EF] px-3 py-1 text-xs font-bold text-[#0F6B41] shadow-sm">
+            Selesai
+          </span>
+        );
+      case "Tiada Tindakan Lanjut":
+        return (
+          <span className="inline-block rounded-full border border-zinc-300 bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 shadow-sm">
+            Tiada Tindakan Lanjut
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-block rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+            {status}
+          </span>
+        );
     }
   };
 
@@ -206,16 +246,17 @@ export default function AdminInbox() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg border border-[#DDD7C7] text-sm focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D] outline-none transition-colors bg-white"
+            className="w-full rounded-lg border border-[#DDD7C7] bg-white py-2.5 pl-4 pr-10 text-sm outline-none transition-colors focus:border-[#0A1F3D] focus:ring-1 focus:ring-[#0A1F3D]"
           >
             <option value="">Semua Status</option>
-            <option value="Belum Diteliti">Belum Diteliti</option>
-            <option value="Telah Dipanjangkan">Telah Dipanjangkan</option>
+            <option value="Draft">Draf</option>
+            <option value="Baharu">Baharu</option>
+            <option value="Telah Dipanjangkan ke Bahagian">Telah Dipanjangkan</option>
+            <option value="Dalam Tindakan">Dalam Tindakan</option>
             <option value="Semak Semula">Semak Semula</option>
             <option value="Dikembalikan">Dikembalikan</option>
-            <option value="Tiada Keperluan Tindakan Lanjut">Tiada Keperluan Tindakan Lanjut</option>
             <option value="Selesai">Selesai</option>
-            <option value="Ditutup">Ditutup</option>
+            <option value="Tiada Tindakan Lanjut">Tiada Tindakan Lanjut</option>
           </select>
         </div>
       </div>

@@ -23,10 +23,10 @@ class DivisionTaskController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Akaun anda tidak dihubungkan ke mana-mana Bahagian.'], 403);
         }
 
-        // TAMBAHAN: Kita juga benarkan bahagian melihat kes yang telah mereka 'Dikembalikan' sebagai sejarah
+        // TUKAR DI SINI: Masukkan nama status yang baru dikemaskini
         $tasks = Suggestion::with('user')
             ->where('division_id', $user->division_id)
-            ->whereIn('status', ['Telah Dipanjangkan', 'Dalam Tindakan', 'Selesai', 'Ditutup', 'Dikembalikan', 'Semak Semula'])
+            ->whereIn('status', ['Telah Dipanjangkan ke Bahagian', 'Dalam Tindakan', 'Selesai', 'Tiada Tindakan Lanjut', 'Ditutup', 'Dikembalikan', 'Semak Semula'])
             ->orderBy('updated_at', 'desc')
             ->get();
 
@@ -52,9 +52,9 @@ class DivisionTaskController extends Controller
     // FR-010: Kemas kini status tindakan & Ulasan
     public function updateStatus(Request $request, $id)
     {
-        // 1. KEMAS KINI VALIDASI: Masukkan 'Dikembalikan' dan 'Telah Dipanjangkan'
+        // TUKAR DI SINI: Kemaskini nama status di dalam validasi borang
         $request->validate([
-            'status' => 'required|in:Telah Dipanjangkan,Dalam Tindakan,Selesai,Ditutup,Dikembalikan',
+            'status' => 'required|in:Telah Dipanjangkan ke Bahagian,Dalam Tindakan,Selesai,Tiada Tindakan Lanjut,Dikembalikan',
             'remarks' => 'required|string'
         ]);
 
@@ -73,9 +73,9 @@ class DivisionTaskController extends Controller
             // Set nama tindakan yang lebih jelas untuk Jejak Audit
             $actionText = 'Kemas Kini Status Tindakan';
             if ($request->status === 'Dikembalikan') {
-                $actionText = 'Pemulangan Semula Kes (Bukan Bidang Kuasa)';
+                $actionText = 'Pemulangan Semula Cadangan (Bukan Bidang Kuasa)';
             } elseif ($request->status === 'Selesai') {
-                $actionText = 'Kes Diselesaikan Oleh Bahagian';
+                $actionText = 'Cadangan Diselesaikan Oleh Bahagian';
             }
 
             // Rekod Audit (FR-012)
@@ -116,11 +116,11 @@ class DivisionTaskController extends Controller
             }
         } 
         
-        // JIKA KES DIPULANGKAN KE PEJABAT KSU
+        // JIKA CADANGAN DIPULANGKAN KE PEJABAT KSU
         elseif ($request->status === 'Dikembalikan') {
             
-            $ksuSubject = "KSU Direct - PERHATIAN: Kes Dikembalikan ($task->reference_no)";
-            $ksuBody = "Tindakan bagi cadangan penambahbaikan bernombor rujukan $task->reference_no telah DIKEMBALIKAN oleh $divisionName dengan alasan berikut: \n\n\"" . $request->remarks . "\"\n\nSila log masuk ke sistem untuk memanjangkan kes ini kepada bahagian yang lebih tepat.";
+            $ksuSubject = "KSU Direct - PERHATIAN: Cadangan Dikembalikan ($task->reference_no)";
+            $ksuBody = "Tindakan bagi cadangan penambahbaikan bernombor rujukan $task->reference_no telah DIKEMBALIKAN oleh $divisionName dengan alasan berikut: \n\n\"" . $request->remarks . "\"\n\nSila log masuk ke sistem untuk memanjangkan cadangan ini kepada bahagian yang lebih tepat.";
             $ksuLink = env('FRONTEND_URL', 'http://10.25.62.106:3000') . "/admin/peti-masuk/{$task->id}";
 
             // Dapatkan staf admin/KSU yang menguruskan sistem

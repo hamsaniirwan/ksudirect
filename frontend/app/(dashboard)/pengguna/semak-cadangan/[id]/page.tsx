@@ -42,7 +42,24 @@ export default function PaparCadangan() {
         <p className="mt-4 text-sm font-medium text-[#64748B]">Memuatkan butiran...</p>
       </div>
     );
+    
   if (!data) return null;
+
+  // ==========================================
+  // LANGKAH A: Objek Warna Status
+  // ==========================================
+  const statusStyles: Record<string, string> = {
+    "Draft": "border-slate-200 bg-slate-100 text-slate-600",
+    "Baharu": "border-blue-200 bg-blue-50 text-blue-700",
+    "Telah Dipanjangkan ke Bahagian": "border-indigo-200 bg-indigo-50 text-indigo-700",
+    "Dalam Tindakan": "border-[#E5D3A8] bg-[#FBF3E3] text-[#8A6A22]",
+    "Dikembalikan": "border-orange-200 bg-orange-50 text-orange-700",
+    "Semak Semula": "border-rose-200 bg-rose-50 text-rose-700",
+    "Selesai": "border-[#CDE9DA] bg-[#EAF6EF] text-[#0F6B41]",
+    "Tiada Tindakan Lanjut": "border-zinc-300 bg-zinc-100 text-zinc-700",
+  };
+
+  const currentStyle = statusStyles[data.status] || "border-slate-200 bg-slate-100 text-slate-600";
 
   return (
     <div className="mx-auto p-4 font-body md:p-8">
@@ -101,17 +118,11 @@ export default function PaparCadangan() {
               {data.reference_no || "DRAF"}
             </p>
           </div>
+          
+          {/* LANGKAH B: Paparan Lencana Status */}
           <div className="sm:text-right">
             <p className="mb-1.5 text-xs font-medium text-[#64748B] md:mb-1 md:text-sm">Status</p>
-            <span
-              className={`inline-block rounded-full border px-4 py-1.5 text-xs font-bold md:py-1 md:text-sm ${
-                data.status === "Draft"
-                  ? "border-[#E5E0D3] bg-[#F2EEE4] text-[#4B5563]"
-                  : data.status === "Semak Semula"
-                  ? "border-amber-200 bg-amber-50 text-amber-700"
-                  : "border-[#D6E1EF] bg-[#EAF0F8] text-[#0A1F3D]"
-              }`}
-            >
+            <span className={`inline-block rounded-full border px-4 py-1.5 text-xs font-bold md:py-1 md:text-sm shadow-sm ${currentStyle}`}>
               {data.status === "Draft" ? "Draf" : data.status}
             </span>
           </div>

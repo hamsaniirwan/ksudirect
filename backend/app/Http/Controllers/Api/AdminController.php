@@ -19,7 +19,7 @@ class AdminController extends Controller
     public function inbox(Request $request)
     {
         $suggestions = Suggestion::with('user:id,name')
-            ->whereNotIn('status', ['Draft', 'draft', 'Draf']) // <-- TAMBAH BARIS INI UNTUK TAPIS OUT DRAF
+            ->whereNotIn('status', ['Draft', 'draft', 'Draf'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -73,12 +73,14 @@ class AdminController extends Controller
         DB::transaction(function () use ($request, $task, $oldStatus, $user) {
             
             if ($request->action === 'panjangkan') {
-                $task->status = 'Telah Dipanjangkan';
+                // TUKAR DI SINI: Telah Dipanjangkan -> Telah Dipanjangkan ke Bahagian
+                $task->status = 'Telah Dipanjangkan ke Bahagian';
                 $task->division_id = $request->division_id;
             } elseif ($request->action === 'buka_semula') {
                 $task->status = 'Semak Semula';
             } else {
-                $task->status = 'Ditutup'; 
+                // TUKAR DI SINI: Ditutup -> Tiada Tindakan Lanjut
+                $task->status = 'Tiada Tindakan Lanjut'; 
             }
             $task->save();
 
@@ -130,15 +132,18 @@ class AdminController extends Controller
     // =========================================================
     // FUNGSI UNTUK DASHBOARD ADMIN (CARTA & KPI)
     // =========================================================
+    // =========================================================
+    // FUNGSI UNTUK DASHBOARD ADMIN (CARTA & KPI)
+    // =========================================================
     public function dashboard(Request $request)
     {
         // 1. KIRAAN KPI UTAMA (Atas)
         $total = Suggestion::count();
-        $pending = Suggestion::whereIn('status', ['Belum Diteliti'])->count(); 
-        $forwarded = Suggestion::whereIn('status', ['Telah Dipanjangkan', 'Dalam Tindakan', 'Semak Semula', 'Dikembalikan'])->count();
-        $completed = Suggestion::whereIn('status', ['Selesai', 'Ditutup', 'Tiada Keperluan Tindakan Lanjut'])->count();
+        $pending = Suggestion::whereIn('status', ['Baharu'])->count(); 
+        $forwarded = Suggestion::whereIn('status', ['Telah Dipanjangkan ke Bahagian', 'Dalam Tindakan', 'Semak Semula', 'Dikembalikan'])->count();
+        $completed = Suggestion::whereIn('status', ['Selesai', 'Tiada Tindakan Lanjut', 'Ditutup', 'Tiada Keperluan Tindakan Lanjut'])->count();
 
-        // 2. GRAF KESELURUHAN MENGIKUT TAHUN (Kalis Ralat DB)
+        // 2. GRAF KESELURUHAN MENGIKUT TAHUN
         $allSuggestions = Suggestion::all();
         $yearlyData = $allSuggestions->groupBy(function($item) {
             return \Carbon\Carbon::parse($item->created_at)->format('Y');
@@ -149,8 +154,8 @@ class AdminController extends Controller
             ];
         })->values()->sortBy('year')->toArray();
 
-        // 3. GRAF BULANAN MENGIKUT STATUS (Kalis Ralat DB)
-        $selectedYear = $request->input('year', date('Y')); // Jika kosong, guna tahun semasa
+        // 3. GRAF BULANAN DI PECAHKAN 1 PER 1 STATUS
+        $selectedYear = $request->input('year', date('Y')); 
         $suggestionsThisYear = Suggestion::whereYear('created_at', $selectedYear)->get();
         
         $bulanMelayu = [
@@ -159,18 +164,21 @@ class AdminController extends Controller
         ];
 
         $monthlyData = [];
-        // Loop 12 bulan supaya graf sentiasa penuh 12 bar (Jan-Dis)
         for ($i = 1; $i <= 12; $i++) {
-            // Tapis data untuk bulan tersebut sahaja
             $monthItems = $suggestionsThisYear->filter(function($item) use ($i) {
                 return \Carbon\Carbon::parse($item->created_at)->format('n') == $i;
             });
 
+            // PASTIKAN NAMA KEY INI SAMA DENGAN DATAKEY DI FRONTEND
             $monthlyData[] = [
                 'month' => $bulanMelayu[$i],
-                'pending' => $monthItems->where('status', 'Belum Diteliti')->count(),
-                'forwarded' => $monthItems->whereIn('status', ['Telah Dipanjangkan', 'Dalam Tindakan', 'Semak Semula', 'Dikembalikan'])->count(),
-                'completed' => $monthItems->whereIn('status', ['Selesai', 'Ditutup', 'Tiada Keperluan Tindakan Lanjut'])->count(),
+                'baharu' => $monthItems->where('status', 'Baharu')->count(),
+                'dipanjangkan' => $monthItems->where('status', 'Telah Dipanjangkan ke Bahagian')->count(),
+                'dalam_tindakan' => $monthItems->where('status', 'Dalam Tindakan')->count(),
+                'dikembalikan' => $monthItems->where('status', 'Dikembalikan')->count(),
+                'semak_semula' => $monthItems->where('status', 'Semak Semula')->count(),
+                'selesai' => $monthItems->where('status', 'Selesai')->count(),
+                'tiada_tindakan' => $monthItems->whereIn('status', ['Tiada Tindakan Lanjut', 'Ditutup'])->count(),
             ];
         }
 
